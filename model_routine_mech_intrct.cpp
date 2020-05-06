@@ -23,51 +23,136 @@ using namespace std;
 #if HAS_SPAGENT
 void ModelRoutine::initJunctionSpAgent( const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& vDir/* unit direction vector from spAgent1 to spAgent0 */, const REAL dist, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */ ) {
 	/* MODEL START */
+    link = false;
 
-	link = false;
+    S32 type0 = spAgent0.state.getType();
+    S32 type1 = spAgent1.state.getType();
+    REAL factor = 1.1;
 
-	/* MODEL END */
+    REAL R0 = spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+    REAL R1 = spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS );
 
-	return;
+    REAL dist_threshold = factor * (R0 + R1);
+
+    if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
+    //if (  type0 != type1 ) {
+ 
+       if (  dist < dist_threshold )  {
+            link = true;
+            
+            end0.setType( type0 );           
+            end1.setType( type1 );
+
+       }
+       else {
+            link = false;
+       }
+    }
+
+
+    /* MODEL END */
+
+    return;
 }
 
 void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& vDir/* unit direction vector from spAgent1 to spAgent0 */, const REAL dist, MechIntrctData& mechIntrctData0, MechIntrctData& mechIntrctData1, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */, BOOL& unlink  ) {
-	/* MODEL START */
 
-	REAL R = spAgent0.state.getModelReal( CELL_STATE_REAL_RADIUS ) + spAgent1.state.getModelReal( CELL_STATE_REAL_RADIUS );
-	REAL mag;/* + for repulsive force, - for adhesive force */
+    /* MODEL START */
+    link = false;
+    unlink = false;
 
-	if( dist <= R ) {/* shoving */
-		mag = 0.5 * ( R - dist );
-	}
-	else {/* adhesion */
-		if( spAgent0.state.getType() == spAgent1.state.getType() ) {
-			REAL x = dist / R;
-#if REAL_IS_FLOAT
-			mag = -0.5 * ( dist - R ) * expf( -1.0 * ( x - 1.0 ) * ( x - 1.0 ) / ADHESION_S );
-#else
-			mag = -0.5 * ( dist - R ) * exp( -1.0 * ( x - 1.0 ) * ( x - 1.0 ) / ADHESION_S );
-#endif
-		}
-		else {
-			mag = 0.0;
-		}
-	}
+    S32 type0 = spAgent0.state.getType();
+    S32 type1 = spAgent1.state.getType();
 
-	mechIntrctData0.setModelReal( CELL_MECH_REAL_FORCE_X, vDir[0] * mag );
-	mechIntrctData0.setModelReal( CELL_MECH_REAL_FORCE_Y, vDir[1] * mag );
-	mechIntrctData0.setModelReal( CELL_MECH_REAL_FORCE_Z, vDir[2] * mag );
+    REAL R0 = A_AGENT_SHOVING_SCALE[type0]*spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+    REAL R1 = A_AGENT_SHOVING_SCALE[type1]*spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+    REAL dist_threshold = R0 + R1;
+    REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[type0] - 0.5*A_AGENT_SHOVING_LIMIT[type1];
+    REAL mag = 0.0;
+    REAL stress = 0.0 ; 
+    REAL xij  = D - dist ;
 
-	mechIntrctData1.setModelReal( CELL_MECH_REAL_FORCE_X, -vDir[0] * mag );
-	mechIntrctData1.setModelReal( CELL_MECH_REAL_FORCE_Y, -vDir[1] * mag );
-	mechIntrctData1.setModelReal( CELL_MECH_REAL_FORCE_Z, -vDir[2] * mag );
+    //if( ( dist <= D ) && ( spAgent0.junctionData.isLinked(spAgent1.junctionData) == false ) ) {/* shoving */
+    //    REAL Fij = 0.5 * (xij) ;
+    //    mag = mag + Fij;
+    //    stress = stress + dist * Fij ; 
+    //}
+    //else {/* adhesion */
+    //    if( A_AGENT_ADHESION_S[type0][type1] > 0.0 )  {
+    //        REAL Fij = 0.5 * xij* EXP( -xij*xij / A_AGENT_ADHESION_S[type0][type1] );
+    //        mag = mag + Fij ;
+    //        stress = stress + dist * Fij ;
+    //    }
+    //}
+ 
+    
+    if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
+        REAL sij = A_AGENT_BOND_S[type0][type1] ;
+        if(spAgent0.junctionData.isLinked(spAgent1.junctionData) == true) {
+            if( dist > A_AGENT_BOND_DESTROY_FACTOR[type0][type1]* dist_threshold ) {
+                unlink = true;/* break junction */
+            }
+            else{
+                // compute elastic force
+                REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                mag = mag + Fij ;
+                stress = stress + dist * Fij ;
 
-	link = false;
-	unlink = false;
+                if ( (type0 == JUNCTION_END_TYPE_CELL) && (type1 == JUNCTION_END_TYPE_MICROCARRIER) ){
+                    mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_X,vDir[0] );
+                    mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_Y,vDir[1] );
+                    mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_Z,vDir[2] );
+                }
+                else if ( (type1 == JUNCTION_END_TYPE_CELL) && (type0 == JUNCTION_END_TYPE_MICROCARRIER) ){
+                    mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_X,-vDir[0] );
+                    mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Y,-vDir[1] );
+                    mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Z,-vDir[2] );
+                } 
+ 
 
-	/* MODEL END */
+            }
+        }
+        else {/* no junction */
+            if( dist < A_AGENT_BOND_CREATE_FACTOR[type0][type1]*dist_threshold ) {
 
-	return;
+                link = true;/* form junction */
+
+                end0.setType( type0 );
+                end1.setType( type1 );
+
+
+                // add force rigth away
+                REAL D = R0 + R1;
+                REAL xij  = D - dist  ;
+                REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                mag = mag + Fij ;
+                stress = stress + dist * Fij;
+            }
+        }
+        
+    }
+    
+    //if ( type0 == type1 ) {
+    //   cout << "force " << mag << " xij " << xij << endl;
+    //}
+    mag = A_AGENT_STIFFNESS[type0][type1] * mag ;
+    stress  = A_AGENT_STIFFNESS[type0][type1] * stress ;
+       
+
+    mechIntrctData0.setModelReal(CELL_MECH_REAL_FORCE_X,vDir[0]*mag);
+    mechIntrctData0.setModelReal(CELL_MECH_REAL_FORCE_Y,vDir[1]*mag);
+    mechIntrctData0.setModelReal(CELL_MECH_REAL_FORCE_Z,vDir[2]*mag);
+
+    mechIntrctData1.setModelReal(CELL_MECH_REAL_FORCE_X,-vDir[0]*mag);
+    mechIntrctData1.setModelReal(CELL_MECH_REAL_FORCE_Y,-vDir[1]*mag);
+    mechIntrctData1.setModelReal(CELL_MECH_REAL_FORCE_Z,-vDir[2]*mag); 
+ 
+    mechIntrctData0.setModelReal(CELL_MECH_REAL_STRESS,stress);
+    mechIntrctData1.setModelReal(CELL_MECH_REAL_STRESS,stress);
+
+
+    return;
+
 }
 #endif
 

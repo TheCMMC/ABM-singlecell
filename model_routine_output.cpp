@@ -27,7 +27,15 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
 	color = spAgent.state.getType();
 	CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
 	CHECK( v_extraReal.size() == NUM_PARTICLE_EXTRA_OUTPUT_REALS );
-	v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = spAgent.state.getModelReal( CELL_STATE_REAL_RADIUS );
+        REAL radius = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS );   
+	v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = radius;
+
+        // print the Pressure
+        REAL CellVol = volume_agent( radius );
+        REAL stress = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS );
+
+        v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] = ( 0.5 / 3.0 )  * stress / CellVol;
+
 	CHECK( v_extraVReal.size() == 0 );
 
 	/* MODEL END */

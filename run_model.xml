@@ -8,7 +8,7 @@
 	start: starting baseline time step, required, integer, [0,)
 	end: ending baseline time step, required, integer, [start + 1,)
 -->
-<time_step start="0" end="10"/>
+<time_step start="0" end="60000"/>
 
 <!-- domain, parameters describing the simulation domain
 x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) should be equl to or larger than 4 (minimum parition size), positive integer multiple of refine_ratio^(interface grid level in AMR), and equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size), required, integer, [4,)
@@ -70,7 +70,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	regridding: regridding interval (unit: baseline time steps), regridding should be equal to or smaller than load_balance and regridding should equally divide load_balance, optional, integer, default=100, [1,)
 	checkpoint: checkpoint interval (0: turn off, unit: baseline time steps), optional, default=0, integer, [0,)
 -->
-<interval output="1" summary="1" load_balance="100" regridding="100" checkpoint="100"/>
+<interval output="100" summary="1" load_balance="50000" regridding="50000" checkpoint="50000"/>
 
 <!-- amr, controls adaptive mesh refinement
 	refine_ratio: adaptive mesh refinement ratio between two consecutive levels, optional, default=2, 2|4|8
