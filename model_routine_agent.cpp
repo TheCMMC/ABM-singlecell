@@ -16,6 +16,10 @@ NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) unde
 
 #include "model_define.h"
 
+extern "C" {
+  void cfd_query(double, double, double, double *, double *, double *);
+};
+
 /* MODEL END */
 
 using namespace std;
@@ -233,7 +237,18 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
 	/* MODEL START */
 
     VReal vForce ;
- 
+
+    // retrieve velocities from cfd data based on agent location:
+  const int GRID_SIZE = IF_GRID_SPACING;
+  double x =  GRID_SIZE * vIdx[0] +  GRID_SIZE*0.5   +  vOffset[0];
+  double y =  GRID_SIZE * vIdx[1] +  GRID_SIZE*0.5   +  vOffset[1];
+  double z =  GRID_SIZE * vIdx[2] +  GRID_SIZE*0.5   +  vOffset[2];
+  double u=0, v=0, w=0;
+
+  cfd_query(x, y, z, &u, &v, &w);
+  std::cerr<<"("<<x<<", "<<y<<", "<<z<<")\t ("<<u<<", "<<v<<", "<<w<<")\n";
+
+    
     vForce[0] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_X );
     vForce[1] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Y );
     vForce[2] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Z );

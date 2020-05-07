@@ -16,6 +16,12 @@ NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) unde
 
 #include "model_define.h"
 
+#include <string>
+extern "C" {
+  // call to CGAL to create hierarchy of tetrahedra
+  void cfd_setup(char *);
+};
+
 /* MODEL END */
 
 using namespace std;
@@ -263,7 +269,7 @@ void ModelRoutine::updateSummaryOutputInfo( Vector<SummaryOutputInfo>& v_summary
 void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {/* called once per simulation */
 	/* MODEL START */
 
-	/* nothing to do */
+  cfd_setup((char*)"cfd_velocity_data");
 
 	/* MODEL END */
 
