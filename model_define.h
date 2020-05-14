@@ -32,7 +32,7 @@ inline REAL MonodEquation(  REAL Kc , REAL u ) {
 
 /* MODEL START */
 const S32 SYSTEM_DIMENSION = 3;
-const REAL IF_GRID_SPACING = 200.0;
+const REAL IF_GRID_SPACING = 1750.0;
 const REAL EPSILON = 1e-20;
 
 typedef enum _model_rng_type_e {
@@ -106,7 +106,7 @@ const REAL A_DIFFUSION_COEFF_CELLS[ NUM_AGENT_TYPES ] = { 0.0 , 0.0 };
 const REAL A_AGENT_FRICIONAL_DRAG[ NUM_AGENT_TYPES ] = { 0.4e-6, 0.4e-6  }; 
 const REAL A_CELL_RADIUS[ NUM_AGENT_TYPES ] = {  150.0 *0.5, 14.5 };
 const REAL A_DIVISION_RADIUS[  NUM_AGENT_TYPES ] = { 0.0 , 15.0 } ;
-const REAL A_MIN_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 5.0};
+const REAL A_MIN_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 11.0};
 const REAL A_MAX_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 16.0};
 const REAL A_MAX_CELL_VOL[NUM_AGENT_TYPES]={ 0.0, 4.0 * MY_PI * 16.0*16.0*16.0 / 3.0  };
 const REAL A_MIN_CELL_VOL[NUM_AGENT_TYPES]={ 0.0,  523.6 };
@@ -117,15 +117,15 @@ const REAL A_AGENT_SHOVING_LIMIT[ NUM_AGENT_TYPES ] = { 0.0 , 0.0 } ;
 const REAL A_AGENT_ADHESION_S[NUM_AGENT_TYPES][NUM_AGENT_TYPES]={{0.0, 0.0}, {0.0, 0.01} };
 
 // parameters of bonding forces: https://doi.org/10.1371/journal.pone.0191089 
-const REAL A_AGENT_BOND_S[NUM_AGENT_TYPES][NUM_AGENT_TYPES]={{0.1, 0.1}, {0.1, 0.1} };
-const REAL A_AGENT_BOND_DESTROY_FACTOR[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{0.0, 1.1}, {1.1, 1.1} };
+const REAL A_AGENT_BOND_S[NUM_AGENT_TYPES][NUM_AGENT_TYPES]={{0.1, 0.2}, {0.2, 0.1} };
+const REAL A_AGENT_BOND_DESTROY_FACTOR[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{0.0, 1.2}, {1.2, 1.1} };
 const REAL A_AGENT_BOND_CREATE_FACTOR[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{0.0, 1.05}, {1.05, 1.05} };
-const REAL A_AGENT_STIFFNESS[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{2.2e-9,2.2e-9},{2.2e-9,2.2e-9}} ;
+const REAL A_AGENT_STIFFNESS[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{2.2e-9,4.4e-9},{4.4e-9,2.2e-9}} ;
 
 
 const REAL A_DENSITY_BIOMASS[ NUM_AGENT_TYPES ] = {150.0, 150.0};
-const REAL A_MCARRIER_DENSITY_PER_UB =  1 / (32.0 *32.0 * 32.0 ) ; //0.02 ; // 0.1
-const REAL INIT_CELLS_PER_MICROCARRIER = 10;
+const REAL A_MCARRIER_DENSITY_PER_UB =  500 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
+const REAL INIT_CELLS_PER_MICROCARRIER = 5; //10;
 const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = { 150.0 * 1.25, 20.0 * 1.25 };
 const REAL ODE_CELL_GROWTH_CONSTANT = 6.79854021274079;  //0.01 ;
 
@@ -138,6 +138,21 @@ const REAL MECH_INTRCT_ELLIPSOID_EPSILON = 1e-10;
 const REAL BASELINE_TIME_STEP_DURATION = 10.0;
 const REAL STEP_TIME = 1.0 ;
 const REAL NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1 ;
+
+// Bioreactor Geometry
+const REAL BIO_RADIUS = 55000 * 0.5; // micrometers
+const REAL BIO_HEIGHT = 42895; // micrometers
+
+// Boundary forces 
+// U =  eps_B * exp( delta / sigma_B )  for delta >0 ; 0 othersie
+// This potential generate de forces  Fx = - dU /dx  
+// Assuming microcarriers and cells have the same parameters for simplicity
+const REAL EPS_BOUNDARY = 1.0e-9;
+const REAL SIG_BOUNDARY = 1.0; 
+
+// drag force 
+const REAL  DRAG_FORCE_CONSTANT = 1.0e-15;
+
 
 /* MODEL END */
 

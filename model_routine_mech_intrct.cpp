@@ -91,6 +91,7 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
         if(spAgent0.junctionData.isLinked(spAgent1.junctionData) == true) {
             if( dist > A_AGENT_BOND_DESTROY_FACTOR[type0][type1]* dist_threshold ) {
                 unlink = true;/* break junction */
+                //cout << " broken juntion " << endl;
             }
             else{
                 // compute elastic force

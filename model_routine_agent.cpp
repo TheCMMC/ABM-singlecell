@@ -28,6 +28,9 @@ using namespace std;
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionVSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentVOffset ) {/* initialization */
 	/* MODEL START */
 
+        REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
+        REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ; 
+
 	if( init == true ) {
 		const S64 numUBs = regionVSize[0] * regionVSize[1] * regionVSize[2];
 
@@ -42,14 +45,20 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
 			for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
 
-				REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM );/* [0.0,1.0) */
+				REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM ) ;/* [0.0,1.0) */
 				if( randScale >= 1.0 ) {
 					randScale = 1.0 - EPSILON;
 				}
 				CHECK( randScale >= 0.0 );
 				CHECK( randScale < 1.0 );
 				vPos[dim] = ( REAL )startVIdx[dim] * IF_GRID_SPACING + ( REAL )regionVSize[dim] * IF_GRID_SPACING * randScale;
+				//vPos[dim] =  REAL ( Info::getDomainSize( dim ) ) * IF_GRID_SPACING  * 0.5  +   BIO_RADIUS * randScale ;
 			}
+
+                        REAL dist = SQRT( (vPos[0] - xo)*(vPos[0] - xo) + (vPos[1] - yo)*(vPos[1] - yo) );
+                        if ( ( dist >= BIO_RADIUS - 290.0 ) || ( vPos[2] >= BIO_HEIGHT - 290.0  ) || ( vPos[2] <= 290.0 ) ) {
+                             continue ;
+                        }
 
 			Util::changePosFormat1LvTo2Lv( vPos, vIdx, vOffset );
 
@@ -80,7 +89,14 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
                              VIdx vIdx_c;
                              VReal vOffset_c;
                              SpAgentState state_c;
-                             REAL rho = A_CELL_RADIUS[ AGENT_MCARRIER ] + A_CELL_RADIUS[AGENT_CELL_A] ;
+
+                             REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM ) ;/* [0.0,1.0) */
+                             if( randScale >= 1.0 ) {
+                                 randScale = 1.0 - EPSILON;
+                             }
+                             REAL cellrad = A_MIN_CELL_RADIUS[AGENT_CELL_A] + ( A_CELL_RADIUS[AGENT_CELL_A] - A_MIN_CELL_RADIUS[AGENT_CELL_A] ) * randScale ;
+                              
+                             REAL rho = A_CELL_RADIUS[AGENT_MCARRIER] + cellrad ;
 
                              REAL V1, V2, V3, S ;
                              do {
@@ -108,8 +124,8 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
                                        
 
 			     state_c.setType( AGENT_CELL_A );
-                             state_c.setModelReal( CELL_MODEL_REAL_RADIUS, A_CELL_RADIUS[ AGENT_CELL_A ] );
-                             REAL biomass = volume_agent(A_CELL_RADIUS[AGENT_CELL_A])*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
+                             state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
+                             REAL biomass = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
                              state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass );
                              state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
                              state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
@@ -211,7 +227,7 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
         if ((spAgent.state.getModelReal(CELL_MODEL_REAL_UPTAKE_PCT)>0.0)/* live cells */   ) {
             REAL cell_rad = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
             if( cell_rad >= testrad ) { 
-
+                 
                 for( S32 i = 0 ; i < spAgent.junctionData.getNumJunctions() ; i++ ) {
                      const JunctionEnd& end = spAgent.junctionData.getJunctionEndRef( i );
                      if( end.getType() == 1 ) {
@@ -236,7 +252,20 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& vDisp ) {/* if not dividing or disappearing */
 	/* MODEL START */
 
-    VReal vForce ;
+  VReal vForce ;
+  REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
+  REAL dt = BASELINE_TIME_STEP_DURATION * STEP_TIME ;
+  REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
+  REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ;
+  REAL vx = state.getModelReal( CELL_MODEL_REAL_DX ) / dt ; // um/s 
+  REAL vy = state.getModelReal( CELL_MODEL_REAL_DY ) / dt ; // um/s 
+  REAL vz = state.getModelReal( CELL_MODEL_REAL_DZ ) / dt ; // um/s 
+  
+  REAL Fmag = 0.0 ; 
+  
+  //if ( state.getType() == AGENT_CELL_A ) { 
+  //   cout << "radius " << radius << endl ; 
+  //}
 
     // retrieve velocities from cfd data based on agent location:
   const int GRID_SIZE = IF_GRID_SPACING;
@@ -245,42 +274,68 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   double z =  GRID_SIZE * vIdx[2] +  GRID_SIZE*0.5   +  vOffset[2];
   double u=0, v=0, w=0;
 
-  cfd_query(x, y, z, &u, &v, &w);
-  std::cerr<<"("<<x<<", "<<y<<", "<<z<<")\t ("<<u<<", "<<v<<", "<<w<<")\n";
+  cfd_query( (x - xo)*1e-6, (y - yo)*1e-6, z*1e-6, &u, &v, &w); // velocity units m/s
+  //std::cerr<<"("<<x - xo<<", "<<y-yo<<", "<<z<<")\t ("<<u<<", "<<v<<", "<<w<<")\n";
+  
+  // relative velocity of fluid
+  vx = u*1e6 - vx ;
+  vy = v*1e6 - vy ;
+  vz = w*1e6 - vz ;
 
     
-    vForce[0] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_X );
-    vForce[1] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Y );
-    vForce[2] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Z );
-    REAL stress = mechIntrctData.getModelReal( CELL_MECH_REAL_STRESS  );    
-    S32 type = state.getType();     
- 
-    //multiply disp by K/zeta, K=sprig constant, zeta=friccion coefficient
-    REAL dt = BASELINE_TIME_STEP_DURATION * STEP_TIME ;
+  vForce[0] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_X );
+  vForce[1] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Y );
+  vForce[2] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Z );
+  REAL stress = mechIntrctData.getModelReal( CELL_MECH_REAL_STRESS  );    
+  S32 type = state.getType();    
 
-    // mechanic forces
-    for( S32 dim = 0 ; dim < SYSTEM_DIMENSION; dim++ ) {
-        vDisp[dim] = dt * vForce[dim] / A_AGENT_FRICIONAL_DRAG[type] ;
+  // Compute force with cylindrical boundary  
+  REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
+  REAL delta =  dist + radius - BIO_RADIUS ;
+  if ( delta  > 0.0 ) { 
+    Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
+    vForce[0] += Fmag * (x - xo) / dist ;
+    vForce[1] += Fmag * (y - yo) / dist ;
+  }
+
+  // compute forces with bottom and ceiling
+  if ( z + radius - BIO_HEIGHT ) { 
+    delta = z + radius - BIO_HEIGHT; 
+    vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
+  }
+  else if ( radius - z ) {
+    delta = radius ;
+    vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
+  }
+   
+  // compute drag force 
+  vForce[0] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vx  ;
+  vForce[1] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vy  ;
+  vForce[2] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vz  ;
+
+  //multiply disp by K/zeta, K=sprig constant, zeta=friccion coefficient
+  // mechanic forces
+  for( S32 dim = 0 ; dim < SYSTEM_DIMENSION; dim++ ) {
+    vDisp[dim] = dt * vForce[dim] / A_AGENT_FRICIONAL_DRAG[type] ;
+  }
+
+  // Random movement (Brownian)
+  if ( A_DIFFUSION_COEFF_CELLS[type] > 0.0 ){
+    REAL F_prw = SQRT( 2*A_DIFFUSION_COEFF_CELLS[type] * dt );
+    for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ )
+      vDisp[dim]+= F_prw* Util::getModelRand(MODEL_RNG_GAUSSIAN);
+  }
+
+  for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {/* limit the maximum displacement within a single time step */
+    if( FABS( vDisp[dim] ) >= IF_GRID_SPACING ) {
+      ERROR( "vDisp[" << dim << "] too large: " << vDisp[dim]  );
     }
+  }
 
-
-    // Random movement (Brownian)
-    if ( A_DIFFUSION_COEFF_CELLS[type] > 0.0 ){
-        REAL F_prw = SQRT( 2*A_DIFFUSION_COEFF_CELLS[type] * dt );
-        for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ )
-           vDisp[dim]+= F_prw* Util::getModelRand(MODEL_RNG_GAUSSIAN);
-    }
-
-    for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {/* limit the maximum displacement within a single time step */
-	if( FABS( vDisp[dim] ) >= IF_GRID_SPACING ) {
-		ERROR( "vDisp[" << dim << "] too large." );
-	}
-    }
-
-    state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // stress
-    state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
-    state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
-    state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
+  state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // stress
+  state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
+  state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
+  state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
     
 
     /* MODEL END */

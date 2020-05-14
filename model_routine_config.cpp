@@ -210,9 +210,7 @@ void ModelRoutine::updateRNGInfo( Vector<RNGInfo>& v_rngInfo ) {
 	rngInfo.param0 = 0.0;
 	rngInfo.param1 = 1.0;
 	rngInfo.param2 = 0.0;/* dummy */
-
 	v_rngInfo[ MODEL_RNG_UNIFORM ] =  rngInfo ;
-
 
         rngInfo.type = RNG_TYPE_UNIFORM;
         rngInfo.param0 = 0.95;

@@ -32,7 +32,7 @@ public:
     // x y z u v w
     // representing a point (x,y,z) and its associated velocity (u, v, w).
     std::ifstream data_file(fname.c_str());
-    std::vector<std::pair<MyPoint,Point>> points;
+    std::vector< std::pair<MyPoint,Point> > points;
     std::string line;
     std::cerr<<"Reading "<<fname<<"... ";
     while (getline(data_file, line)) {
