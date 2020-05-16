@@ -250,7 +250,8 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 }
 
 void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */, VReal& vDisp ) {/* if not dividing or disappearing */
-	/* MODEL START */
+
+  /* MODEL START */
 
   VReal vForce ;
   REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
@@ -263,11 +264,7 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   
   REAL Fmag = 0.0 ; 
   
-  //if ( state.getType() == AGENT_CELL_A ) { 
-  //   cout << "radius " << radius << endl ; 
-  //}
-
-    // retrieve velocities from cfd data based on agent location:
+  // retrieve velocities from cfd data based on agent location:
   const int GRID_SIZE = IF_GRID_SPACING;
   double x =  GRID_SIZE * vIdx[0] +  GRID_SIZE*0.5   +  vOffset[0];
   double y =  GRID_SIZE * vIdx[1] +  GRID_SIZE*0.5   +  vOffset[1];
@@ -338,9 +335,9 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
     
 
-    /* MODEL END */
+  /* MODEL END */
 
-    return;
+  return;
 }
 
 void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const MechIntrctData& mechIntrctData, const NbrUBEnv& nbrUBEnv, SpAgentState& motherState/* INOUT */, VReal& motherVDisp, SpAgentState& daughterState, VReal& daughterVDisp, Vector<BOOL>& v_junctionDivide, BOOL& motherDaughterLinked, JunctionEnd& motherEnd, JunctionEnd& daughterEnd ) {
@@ -452,10 +449,9 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
             daughterVDisp[dim] = A_MAX_CELL_RADIUS[type] * -1.0;
     }
 
-    CHECK( junctionInfo.getNumJunctions() == 0 );
-    v_junctionDivide.clear();
-
     motherDaughterLinked = true;
+    motherEnd.setType( JUNCTION_END_TYPE_CELL ); 
+    daughterEnd.setType( JUNCTION_END_TYPE_CELL ); 
 
     /* MODEL END */
 
