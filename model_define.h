@@ -80,6 +80,10 @@ typedef enum _cell_mech_real_e {
 typedef enum _particle_extra_output_real_e {
 	PARTICLE_EXTRA_OUTPUT_REAL_RADIUS,
         PARTICLE_EXTRA_OUTPUT_REAL_STRESS,
+        PARTICLE_EXTRA_OUTPUT_REAL_ID,
+        PARTICLE_EXTRA_OUTPUT_REAL_VX,
+        PARTICLE_EXTRA_OUTPUT_REAL_VY,
+        PARTICLE_EXTRA_OUTPUT_REAL_VZ,
 	NUM_PARTICLE_EXTRA_OUTPUT_REALS
 } particle_extra_output_real_e;
 

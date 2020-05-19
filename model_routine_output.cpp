@@ -25,7 +25,6 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
 	/* MODEL START */
 
 	color = spAgent.state.getType();
-	CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
 	CHECK( v_extraReal.size() == NUM_PARTICLE_EXTRA_OUTPUT_REALS );
         REAL radius = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS );   
 	v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = radius;
@@ -35,8 +34,11 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
         REAL stress = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS );
 
         v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] = ( 0.5 / 3.0 )  * stress / CellVol;
+        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_ID] = REAL( spAgent.junctionData.getCurId() )  ;
+        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VX] = spAgent.state.getModelReal( CELL_MODEL_REAL_DX ) / BASELINE_TIME_STEP_DURATION ;
+        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VY] = spAgent.state.getModelReal( CELL_MODEL_REAL_DY ) / BASELINE_TIME_STEP_DURATION ;
+        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VZ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DZ ) / BASELINE_TIME_STEP_DURATION ;
 
-	CHECK( v_extraVReal.size() == 0 );
 
 	/* MODEL END */
 
