@@ -122,7 +122,6 @@ point(), c->vertex(3)->point());
 ->vertex((i+3)%4)->point(), p);
           double part_vol = part.volume();
           part_vol = (part_vol >= 0) ? part_vol : -part_vol;
-          residual_vol -= part_vol;
           u += vel.x() * part_vol;
           v += vel.y() * part_vol;
           w += vel.z() * part_vol;
