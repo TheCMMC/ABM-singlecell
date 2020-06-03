@@ -83,13 +83,11 @@ public:
     switch (lt) {
     case Triangulation::VERTEX:
       //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is a Vertex\n";
-      /*
-	vel = c->vertex(li)->info();
-	u = vel.x(); v = vel.y(); w = vel.z();
-      */
+      vel = c->vertex(li)->info();
+      u = vel.x(); v = vel.y(); w = vel.z();
       break;
     case Triangulation::EDGE:
-      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in an Edge\n";
+      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in an Edge\n";
       /*
 	for (int i = 0; i < 2; i++) {
         vel = c->edges(li)->vertex(i)->info();
@@ -100,7 +98,7 @@ public:
       */
       break;
     case Triangulation::FACET:
-      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is on a Facet\n";
+      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is on a Facet\n";
       /*
 	for (int i = 0; i < 3; i++) {
         vel = c->select_facet(li)->vertex(i)->info();
@@ -112,21 +110,31 @@ public:
       */
       break;
     case Triangulation::CELL:
-      // Average the vertex velocities as a very rough approximation.
-      // Better would be to interpolate properly.
-      for (int i = 0; i < 4; i++) {
-        vel = c->vertex(i)->info();
-        u += vel.x();
-        v += vel.y();
-        w += vel.z();
+      {
+        // std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in cell\n";                                                          
+        CGAL::Tetrahedron_3<K> whole = CGAL::Tetrahedron_3<K>(c->vertex(0)->point(), c->vertex(1)->point(), c->vertex(2)->\
+point(), c->vertex(3)->point());
+        double whole_vol = whole.volume();
+​
+        for (unsigned i = 0; i < 4; i++) {
+          vel = c->vertex(i)->info();
+          CGAL::Tetrahedron_3<K> part = CGAL::Tetrahedron_3<K>(c->vertex((i+1)%4)->point(), c->vertex((i+2)%4)->point(), c\
+->vertex((i+3)%4)->point(), p);
+          double part_vol = part.volume();
+          part_vol = (part_vol >= 0) ? part_vol : -part_vol;
+          residual_vol -= part_vol;
+          u += vel.x() * part_vol;
+          v += vel.y() * part_vol;
+          w += vel.z() * part_vol;
+        }
+        u/=whole_vol; v/=whole_vol; w/=whole_vol;
       }
-      u/=4; v/=4; w/=4;
       break;
     case Triangulation::OUTSIDE_CONVEX_HULL:
-      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is outside the Convex Hull\n";
+      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is outside the Convex Hull\n";
       break;
     case Triangulation::OUTSIDE_AFFINE_HULL:
-      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is outside the Affine Hull\n";
+      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is outside the Affine Hull\n";
       break;
     default:
       std::cerr<<"ERROR: "<<__FILE__<<":"<<__LINE__<<" in estimate_velocity\n";
