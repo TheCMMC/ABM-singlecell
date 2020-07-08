@@ -30,10 +30,21 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
 	v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = radius;
 
         // print the Pressure
-        REAL CellVol = volume_agent( radius );
+        //REAL CellVol = volume_agent( radius );
         REAL stress = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS );
 
-        v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] = ( 0.5 / 3.0 )  * stress / CellVol;
+        // print the id of supporting microcarrier, -1 for microcarroers and -1 detached cells
+        S64 microID = -1 ;
+        if ( spAgent.state.getType() == AGENT_CELL_A ) { 
+           for ( S32 i = 0 ; i <  spAgent.junctionData.getNumJunctions(); i++ ) {
+              JunctionEnd end = spAgent.junctionData.getJunctionEndRef(i);
+              if ( end.getType() == JUNCTION_END_TYPE_MICROCARRIER  ) {
+                 microID = spAgent.junctionData.getOtherEndId( i ) ;
+              }
+           }
+        }
+        v_extraReal[ PARTICEL_EXTRA_OUTPUT_REAL_MicroID ] = REAL( microID ) ;
+        v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] =  stress;
         v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_ID] = REAL( spAgent.junctionData.getCurId() )  ;
         v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VX] = spAgent.state.getModelReal( CELL_MODEL_REAL_DX ) / BASELINE_TIME_STEP_DURATION ;
         v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VY] = spAgent.state.getModelReal( CELL_MODEL_REAL_DY ) / BASELINE_TIME_STEP_DURATION ;
@@ -50,21 +61,40 @@ void ModelRoutine::updateSummaryVar( const VIdx& vIdx, const NbrUBAgentData& nbr
 	/* MODEL START */
 
 
-	CHECK( v_realVal.size() == NUM_GRID_SUMMARY_REALS );
-        CHECK( v_intVal.size() == 0 );
+  CHECK( v_realVal.size() == NUM_GRID_SUMMARY_REALS );
+  CHECK( v_intVal.size() == 0 );
 
         const UBAgentData& ubAgentData = *( nbrUBAgentData.getConstPtr( 0, 0, 0 ) );
 
         REAL count = 0.0;
+        REAL max_disp = 0.0;
+        REAL max_fact = -1.0 ;
 
         /* Count the number of cells placed in the Simulation Domain */
+
         for (S32 i = 0 ; i < ( S32 )ubAgentData.v_spAgent.size() ; i++ ) {
-                count += 1.0 ;
+
+          count += 1.0 ;
+          REAL dx = FABS(  ubAgentData.v_spAgent[i].state.getModelReal( CELL_MODEL_REAL_DX )) ;
+          if ( dx > max_disp )  max_disp = dx ;
+          
+          REAL dy = FABS(  ubAgentData.v_spAgent[i].state.getModelReal( CELL_MODEL_REAL_DY )) ;
+          if ( dy > max_disp )  max_disp = dy ;
+
+          REAL dz = FABS(  ubAgentData.v_spAgent[i].state.getModelReal( CELL_MODEL_REAL_DZ )) ;
+          if ( dz > max_disp )  max_disp = dz ;
+
+          REAL mech_stress  = ubAgentData.v_spAgent[i].state.getModelReal( CELL_MODEL_REAL_STRESS  ) ;
+          REAL factor =  STRESS_TRESHOLD*STRESS_TRESHOLD / ( STRESS_TRESHOLD*STRESS_TRESHOLD +  mech_stress*mech_stress  );
+          if ( factor > max_fact ) max_fact = factor ;
+
+          
         }
 
         /* GRID_SUMMARY_REAL_LIVE_CELLS is set in model_routine_config.cpp */
         v_realVal[GRID_SUMMARY_REAL_LIVE_CELLS] = count;
-
+        v_realVal[GRID_SUMMARY_REAL_MAX_DISP ] = max_disp * BASELINE_TIME_STEP_DURATION ;
+        v_realVal[GRID_SUMMARY_REAL_MAX_GROWRATE ]  = max_fact ; 
         /* MODEL END */
 
 

@@ -38,11 +38,15 @@ void ModelRoutine::initJunctionSpAgent( const VIdx& vIdx0, const SpAgent& spAgen
     //if (  type0 != type1 ) {
  
        if (  dist < dist_threshold )  {
-            link = true;
-            
-            end0.setType( type0 );           
-            end1.setType( type1 );
-
+          link = true;
+       
+          if ( type0 == type1 ) {     
+             end0.setType( JUNCTION_END_TYPE_CELL );           
+             end1.setType( JUNCTION_END_TYPE_CELL );
+          } else {
+             end0.setType( JUNCTION_END_TYPE_MICROCARRIER );
+             end1.setType( JUNCTION_END_TYPE_MICROCARRIER ); 
+          }
        }
        else {
             link = false;
@@ -72,19 +76,6 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     REAL stress = 0.0 ; 
     REAL xij  = D - dist ;
 
-    //if( ( dist <= D ) && ( spAgent0.junctionData.isLinked(spAgent1.junctionData) == false ) ) {/* shoving */
-    //    REAL Fij = 0.5 * (xij) ;
-    //    mag = mag + Fij;
-    //    stress = stress + dist * Fij ; 
-    //}
-    //else {/* adhesion */
-    //    if( A_AGENT_ADHESION_S[type0][type1] > 0.0 )  {
-    //        REAL Fij = 0.5 * xij* EXP( -xij*xij / A_AGENT_ADHESION_S[type0][type1] );
-    //        mag = mag + Fij ;
-    //        stress = stress + dist * Fij ;
-    //    }
-    //}
- 
     
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
         REAL sij = A_AGENT_BOND_S[type0][type1] ;
@@ -99,12 +90,12 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
                 mag = mag + Fij ;
                 stress = stress + dist * Fij ;
 
-                if ( (type0 == JUNCTION_END_TYPE_CELL) && (type1 == JUNCTION_END_TYPE_MICROCARRIER) ){
+                if ( (type0 == AGENT_CELL_A ) && (type1 == AGENT_MCARRIER ) ){
                     mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_X,vDir[0] );
                     mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_Y,vDir[1] );
                     mechIntrctData0.setModelReal( CELL_DIVISION_NORMAL_Z,vDir[2] );
                 }
-                else if ( (type1 == JUNCTION_END_TYPE_CELL) && (type0 == JUNCTION_END_TYPE_MICROCARRIER) ){
+                else if ( (type1 == AGENT_CELL_A ) && (type0 == AGENT_MCARRIER ) ){
                     mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_X,-vDir[0] );
                     mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Y,-vDir[1] );
                     mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Z,-vDir[2] );
@@ -116,18 +107,22 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
         else {/* no junction */
             if( dist < A_AGENT_BOND_CREATE_FACTOR[type0][type1]*dist_threshold ) {
 
-                link = true;/* form junction */
+               link = true;/* form junction */
 
-                end0.setType( type0 );
-                end1.setType( type1 );
+               if ( type0 == type1 ) {
+                  end0.setType( JUNCTION_END_TYPE_CELL );
+                  end1.setType( JUNCTION_END_TYPE_CELL );
+               } else {
+                  end0.setType( JUNCTION_END_TYPE_MICROCARRIER );
+                  end1.setType( JUNCTION_END_TYPE_MICROCARRIER );
+               }
 
-
-                // add force rigth away
-                REAL D = R0 + R1;
-                REAL xij  = D - dist  ;
-                REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
-                mag = mag + Fij ;
-                stress = stress + dist * Fij;
+               // add force rigth away
+               REAL D = R0 + R1;
+               REAL xij  = D - dist  ;
+               REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+               mag = mag + Fij ;
+               stress = stress + dist * Fij;
             }
         }
         

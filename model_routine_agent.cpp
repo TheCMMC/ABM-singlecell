@@ -25,6 +25,11 @@ extern "C" {
 using namespace std;
 
 #if HAS_SPAGENT
+
+
+static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity, SpAgentState& state, /* INOUT */ VReal& vDisp ) ;
+
+
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionVSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentVOffset ) {/* initialization */
 	/* MODEL START */
 
@@ -98,6 +103,8 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
                               
                              REAL rho = A_CELL_RADIUS[AGENT_MCARRIER] + cellrad ;
 
+                             
+
                              REAL V1, V2, V3, S ;
                              do {
                                  V1 = 2.0 * Util::getModelRand( MODEL_RNG_UNIFORM ) - 1.0 ;
@@ -114,7 +121,7 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 			     vPos_c[2] = vPos[2] + rho * V3 / sqrtS  ;
  
                              for ( S32 k = 0 ; k < 3; k++ ) { 
-                                if  ( vPos_c[k] > 32 * IF_GRID_SPACING )  
+                                if  ( vPos_c[k] > 32 * IF_GRID_SPACING )  // 32 ?? change this 
                                     vPos_c[k] =  vPos_c[k] - 32.0 * IF_GRID_SPACING ; 
                                 else if (  vPos_c[0] < 0.0 )  
                                     vPos_c[k] =  32.0 * IF_GRID_SPACING - vPos_c[k] ;
@@ -155,10 +162,11 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
 void ModelRoutine::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, const SpAgent& spAgent, const NbrUBEnv& nbrUBEnv, const Vector<double>& v_y, Vector<double>& v_f ) {
 	/* MODEL START */
-
-        //REAL biomass = v_y[ODE_NET_VAR_GROWING_CELL_BIOMASS];
-        REAL r_Growth = ODE_CELL_GROWTH_CONSTANT; //* biomass;
-        v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth;
+        // dr/dt = constant * K^2 / (K^2 + stress^2 )
+        REAL mech_stress  = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS  ) ;
+        REAL factor =  STRESS_TRESHOLD*STRESS_TRESHOLD / ( STRESS_TRESHOLD*STRESS_TRESHOLD +  mech_stress*mech_stress  );
+        REAL r_Growth = ODE_CELL_GROWTH_CONSTANT * factor ; //* biomass;
+        v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth ;
 
 
 	/* MODEL END */
@@ -179,9 +187,10 @@ void ModelRoutine::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
 
         REAL Biomas = state.getODEVal( 0, ODE_NET_VAR_GROWING_CELL_BIOMASS );
         REAL Inert = 0.0;
-        
 
         REAL cellVol = (Biomas + Inert)/A_DENSITY_BIOMASS[type];
+           
+         
 
         if ( cellVol > A_MAX_CELL_VOL[type] ) {
             cellVol = A_MAX_CELL_VOL[type] ;
@@ -189,6 +198,7 @@ void ModelRoutine::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
         }
         CHECK( cellVol >= 0.0 );
         REAL newRadius = radius_from_volume( cellVol );
+        
 
         state.setModelReal(  CELL_MODEL_REAL_RADIUS, newRadius );
         state.setModelReal( CELL_MODEL_REAL_MASS, Biomas );
@@ -226,6 +236,7 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 
         if ((spAgent.state.getModelReal(CELL_MODEL_REAL_UPTAKE_PCT)>0.0)/* live cells */   ) {
             REAL cell_rad = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+
             if( cell_rad >= testrad ) { 
                  
                 for( S32 i = 0 ; i < spAgent.junctionData.getNumJunctions() ; i++ ) {
@@ -254,13 +265,14 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   /* MODEL START */
 
   VReal vForce ;
+  VReal vDragForce ; 
+  VReal vFluidV ; 
+  VReal vPos =  VReal::ZERO ; 
+  
   REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
-  REAL dt = BASELINE_TIME_STEP_DURATION * STEP_TIME ;
+  S32 type = state.getType() ;
   REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
   REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ;
-  REAL vx = state.getModelReal( CELL_MODEL_REAL_DX ) / dt ; // um/s 
-  REAL vy = state.getModelReal( CELL_MODEL_REAL_DY ) / dt ; // um/s 
-  REAL vz = state.getModelReal( CELL_MODEL_REAL_DZ ) / dt ; // um/s 
   
   REAL Fmag = 0.0 ; 
   
@@ -272,19 +284,18 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   double u=0, v=0, w=0;
 
   cfd_query( (x - xo)*1e-6, (y - yo)*1e-6, z*1e-6, &u, &v, &w); // velocity units m/s
-  //std::cerr<<"("<<x - xo<<", "<<y-yo<<", "<<z<<")\t ("<<u<<", "<<v<<", "<<w<<")\n";
   
-  // relative velocity of fluid
-  vx = u*1e6 - vx ;
-  vy = v*1e6 - vy ;
-  vz = w*1e6 - vz ;
+  // velocity of fluid in um/s
+  vFluidV[0] = u*1e6 * VELOCITY_DAMPING_TEST ;
+  vFluidV[1] = v*1e6 * VELOCITY_DAMPING_TEST ;
+  vFluidV[2] = w*1e6 * VELOCITY_DAMPING_TEST ;
 
     
   vForce[0] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_X );
   vForce[1] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Y );
   vForce[2] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Z );
   REAL stress = mechIntrctData.getModelReal( CELL_MECH_REAL_STRESS  );    
-  S32 type = state.getType();    
+  //S32 type = state.getType();    
 
   // Compute force with cylindrical boundary  
   REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
@@ -305,23 +316,18 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
     vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
   }
    
-  // compute drag force 
-  vForce[0] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vx  ;
-  vForce[1] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vy  ;
-  vForce[2] += DRAG_FORCE_CONSTANT *  6.0 * MY_PI * 10.0 * vz  ;
+  // Gravity force
+  vForce[2] += state.getModelReal( CELL_MODEL_REAL_MASS ) * 9.8 * 1e-6 * DENSITY_MEDIUM / A_DENSITY_BIOMASS[ type ] ; // micro Newtons ???   
+      
+  computeAgentTranslation( vForce, vPos, junctionData, mechIntrctData,  vFluidV,  state /* INOUT */,vDisp ) ;
 
-  //multiply disp by K/zeta, K=sprig constant, zeta=friccion coefficient
-  // mechanic forces
-  for( S32 dim = 0 ; dim < SYSTEM_DIMENSION; dim++ ) {
-    vDisp[dim] = dt * vForce[dim] / A_AGENT_FRICIONAL_DRAG[type] ;
-  }
 
   // Random movement (Brownian)
-  if ( A_DIFFUSION_COEFF_CELLS[type] > 0.0 ){
-    REAL F_prw = SQRT( 2*A_DIFFUSION_COEFF_CELLS[type] * dt );
-    for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ )
-      vDisp[dim]+= F_prw* Util::getModelRand(MODEL_RNG_GAUSSIAN);
-  }
+  //if ( A_DIFFUSION_COEFF_CELLS[type] > 0.0 ){
+  //  REAL F_prw = SQRT( 2*A_DIFFUSION_COEFF_CELLS[type] * dt );
+  //  for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ )
+  //    vDisp[dim]+= F_prw* Util::getModelRand(MODEL_RNG_GAUSSIAN);
+  //}
 
   for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {/* limit the maximum displacement within a single time step */
     if( FABS( vDisp[dim] ) >= IF_GRID_SPACING ) {
@@ -329,10 +335,11 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
     }
   }
 
-  state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // stress
-  state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
-  state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
-  state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
+
+  REAL CellVol = volume_agent( radius );
+  stress =  ( 0.5 / 3.0 )  * stress / CellVol;
+
+  state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // update stress
     
 
   /* MODEL END */
@@ -456,6 +463,86 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
     /* MODEL END */
 
     return;
+}
+
+
+// Verlet/leapfrog algorithm for agents translation
+static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity,  SpAgentState& state, /* INOUT */ VReal& vDisp ) {
+
+  REAL m = state.getModelReal( CELL_MODEL_REAL_MASS );
+  S32 type = state.getType() ;
+  REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
+    
+  VReal oldStaggeredVLinear;
+  VReal newStaggeredVLinear;
+  VReal vLinear;
+  VReal oldVDisp;
+  VReal newVDisp;
+  VReal tmpVForce = vForce ;
+
+
+  if ( Info::getCurBaselineTimeStep() > 0 ) {
+    oldStaggeredVLinear[0] = state.getModelReal( CELL_MODEL_REAL_DX ) ; // um/s
+    oldStaggeredVLinear[1] = state.getModelReal( CELL_MODEL_REAL_DY ) ; // um/s
+    oldStaggeredVLinear[2] = state.getModelReal( CELL_MODEL_REAL_DZ ) ; // um/s
+  }
+  else {
+    
+    oldStaggeredVLinear = FluidVelocity  -  ( vForce ) * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 ) ;
+    //oldStaggeredVLinear = VReal::ZERO;
+    //cout << " m " << m;
+    //cout << " Fluid " << FluidVelocity;
+    //cout << " vForce " << vForce ;
+    //cout << " timestep  " << AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION  ;
+    //cout << " innertia " <<  AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 )  ;
+    //cout << endl ;
+     
+  }
+
+  vDisp = VReal::ZERO;
+  oldVDisp = oldStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+
+
+  for( S32 i = 0 ; i < AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP ; i++ ) { 
+
+    VReal G = ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; // drag force
+    newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_{n-1/2}) * (deltaT/m), G: damping */
+  
+    newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+
+    vLinear = ( newVDisp + oldVDisp ) / ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION * 2.0 );/* v_n = (pos_{n+1} - pos_{n-1}) / (deltaT * 2.0) */
+
+    G =    ( FluidVelocity - vLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; 
+    newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_n) * (deltaT/m) */
+
+    newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+
+    if ( type == -1 ) {
+    cout << " -------------------" << endl;
+    cout << " type  " <<  type << endl ;
+    cout << " FluidVelocity " <<  FluidVelocity  << endl;
+    cout << " delta V  " << FluidVelocity - oldStaggeredVLinear << endl;
+    cout << " Force " << tmpVForce  << endl;
+    cout << " G_Half " << ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius << endl ;
+    cout << " G " <<  G   << endl;
+    cout << " acceler " << ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m ) << endl;
+    cout << " Old Velocity " << oldStaggeredVLinear << endl;
+    cout << " vLinear " << vLinear << endl ;
+    cout << " New Velocity " <<  newStaggeredVLinear << endl;
+    cout << " newDisp " << newVDisp << endl;
+    }
+
+    oldStaggeredVLinear = newStaggeredVLinear;
+    oldVDisp = newVDisp;
+    vDisp += newVDisp;
+
+  }
+  
+ 
+  state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
+  state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
+  state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] );
+
 }
 #endif
 

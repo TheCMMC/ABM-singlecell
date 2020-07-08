@@ -238,6 +238,7 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = "radius";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_STRESS] = "stress";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_ID] = "id";
+	fileOutputInfo.v_particleExtraOutputRealName[PARTICEL_EXTRA_OUTPUT_REAL_MicroID] = "microid";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VX] = "vx";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VY] = "vy";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VZ] = "vz";
@@ -252,27 +253,37 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 }
 
 void ModelRoutine::updateSummaryOutputInfo( Vector<SummaryOutputInfo>& v_summaryOutputRealInfo, Vector<SummaryOutputInfo>& v_summaryOutputIntInfo ) {
-	/* MODEL START */
+/* MODEL START */
 
+  SummaryOutputInfo info;
+  v_summaryOutputIntInfo.clear();
+  v_summaryOutputRealInfo.resize( NUM_GRID_SUMMARY_REALS );
 
-	SummaryOutputInfo info;
-        v_summaryOutputIntInfo.clear();
-        v_summaryOutputRealInfo.resize( NUM_GRID_SUMMARY_REALS );
-        info.name = "Number of Live Cells";
-        info.type = SUMMARY_TYPE_SUM;
-        v_summaryOutputRealInfo[GRID_SUMMARY_REAL_LIVE_CELLS] = info;
+  info.name = "Number of Live Cells";
+  info.type = SUMMARY_TYPE_SUM;
+  v_summaryOutputRealInfo[GRID_SUMMARY_REAL_LIVE_CELLS] = info;
 
+  info.name = "Maximum displacement";
+  info.type = SUMMARY_TYPE_MAX;
+  v_summaryOutputRealInfo[ GRID_SUMMARY_REAL_MAX_DISP ] = info;
 
+  info.name = "Maximum growth rate factor" ;
+  info.type = SUMMARY_TYPE_MAX;
+  v_summaryOutputRealInfo[ GRID_SUMMARY_REAL_MAX_GROWRATE ] = info;
+  
+  
 
-	/* MODEL END */
+/* MODEL END */
 
-	return;
+  return;
 }
 
 void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {/* called once per simulation */
 	/* MODEL START */
 
-  cfd_setup((char*)"cfd_velocity_data");
+  //cfd_setup((char*)"cfd_velocity_data");
+  cfd_setup((char*)"Velocity_240rpm.txt");
+  //cfd_setup((char*)"Velocity_60rpm.txt");
 
 	/* MODEL END */
 
