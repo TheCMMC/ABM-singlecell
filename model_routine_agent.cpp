@@ -316,8 +316,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
     vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
   }
    
-  // Gravity force
-  vForce[2] += state.getModelReal( CELL_MODEL_REAL_MASS ) * 9.8 * 1e-6 * DENSITY_MEDIUM / A_DENSITY_BIOMASS[ type ] ; // micro Newtons ???   
+  // Gravity and Buoyancy force
+  vForce[2] += state.getModelReal(CELL_MODEL_REAL_MASS)*STANDARD_GRAVITY *(DENSITY_MEDIUM/A_DENSITY_BIOMASS[type] - 1.0);    
       
   computeAgentTranslation( vForce, vPos, junctionData, mechIntrctData,  vFluidV,  state /* INOUT */,vDisp ) ;
 

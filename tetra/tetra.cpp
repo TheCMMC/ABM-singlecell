@@ -82,12 +82,12 @@ public:
     u = v = w = 0;
     switch (lt) {
     case Triangulation::VERTEX:
-      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is a Vertex\n";
+      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is a Vertex\n";
       vel = c->vertex(li)->info();
       u = vel.x(); v = vel.y(); w = vel.z();
       break;
     case Triangulation::EDGE:
-      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in an Edge\n";
+      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in an Edge\n";
       /*
 	for (int i = 0; i < 2; i++) {
         vel = c->edges(li)->vertex(i)->info();
@@ -98,7 +98,7 @@ public:
       */
       break;
     case Triangulation::FACET:
-      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is on a Facet\n";
+      //      std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is on a Facet\n";
       /*
 	for (int i = 0; i < 3; i++) {
         vel = c->select_facet(li)->vertex(i)->info();
@@ -111,15 +111,13 @@ public:
       break;
     case Triangulation::CELL:
       {
-        // std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in cell\n";                                                          
-        CGAL::Tetrahedron_3<K> whole = CGAL::Tetrahedron_3<K>(c->vertex(0)->point(), c->vertex(1)->point(), c->vertex(2)->\
-point(), c->vertex(3)->point());
+        // std::cerr<<"("<<x<<", "<<y<<", "<<z<<") is in cell\n";                                                         
+        CGAL::Tetrahedron_3<K> whole = CGAL::Tetrahedron_3<K>(c->vertex(0)->point(), c->vertex(1)->point(), c->vertex(2)->point(), c->vertex(3)->point());
         double whole_vol = whole.volume();
-​
+
         for (unsigned i = 0; i < 4; i++) {
           vel = c->vertex(i)->info();
-          CGAL::Tetrahedron_3<K> part = CGAL::Tetrahedron_3<K>(c->vertex((i+1)%4)->point(), c->vertex((i+2)%4)->point(), c\
-->vertex((i+3)%4)->point(), p);
+          CGAL::Tetrahedron_3<K> part = CGAL::Tetrahedron_3<K>(c->vertex((i+1)%4)->point(), c->vertex((i+2)%4)->point(), c->vertex((i+3)%4)->point(), p);
           double part_vol = part.volume();
           part_vol = (part_vol >= 0) ? part_vol : -part_vol;
           u += vel.x() * part_vol;

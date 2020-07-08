@@ -282,8 +282,8 @@ void ModelRoutine::initGlobal( Vector<U8>& v_globalData ) {/* called once per si
 	/* MODEL START */
 
   //cfd_setup((char*)"cfd_velocity_data");
-  cfd_setup((char*)"Velocity_240rpm.txt");
-  //cfd_setup((char*)"Velocity_60rpm.txt");
+  //cfd_setup((char*)"Velocity_240rpm.txt");
+  cfd_setup((char*)"Velocity_60rpm.txt");
 
 	/* MODEL END */
 
