@@ -9,7 +9,7 @@ To run this model a working installation of Biocellion v3.1 is needed.
 
 ## Setup
 
-- Download Biocellion 3.1 (source?)
+- Download Biocellion 3.1 (Biocellion 3.1 is currently not available yet)
 - Install CGAL: https://doc.cgal.org/latest/Manual/usage.html
 
 ## Contributing
