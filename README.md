@@ -2,13 +2,19 @@
 
 This software is used for the Proof of Concept project by the [CMMC](thecmmc.org).
 
-## Getting started
+## About
 
-Here we should put (or link to) a guide how to install this software.
+This repository contains the ABM-microcarriers model that is being developed for the GFI bioreactor project from the [Cultivated Meat Modeling Consortium](http://www.thecmmc.org).
+To run this model a working installation of Biocellion v3.1 is needed.
+
+## Setup
+
+- Download Biocellion 3.1 (source?)
+- Install CGAL: https://doc.cgal.org/latest/Manual/usage.html
 
 ## Contributing
 
-Here we should put (or link to) a guide how to contribute to this repository.
+If you want to contribute to this repository, please create a new branch and a (draft) pull request for this branch.
 
 ## Contact
 
