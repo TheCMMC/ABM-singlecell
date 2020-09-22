@@ -138,7 +138,7 @@ void ModelRoutine::updateIfSubgridRHSLinear( const S32 elemIdx, const VIdx& vIdx
 	return;
 }
 
-void ModelRoutine::updateIfSubgridKappaDomainBdry( const S32 pdeIdx, const S32 dim, const VIdx& vIdx, const VIdx& ifSubgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& kappa ) {/* for boundary condition */
+void ModelRoutine::updateIfSubgridKappaBCVal( const S32 pdeIdx, const S32 dim, const VIdx& vIdx, const VIdx& ifSubgridVOffset, const UBAgentData& ubAgentData, const UBEnv& ubEnv, REAL& kappa ) {/* for boundary condition */
 	/* MODEL START */
 
 	ERROR( "unimplemented." );
@@ -310,7 +310,7 @@ void ModelRoutine::updatePDEBufferGridRHSLinear( const S32 elemIdx, const VIdx& 
 	return;
 }
 
-void ModelRoutine::updatePDEBufferGridKappaDomainBdry( const S32 pdeIdx, const S32 dim, const VIdx& startVIdx, const VIdx& pdeBufferBoxVSize, REAL& kappa ) {/* for boundary condition */
+void ModelRoutine::updatePDEBufferGridKappaBCVal( const S32 pdeIdx, const S32 dim, const VIdx& startVIdx, const VIdx& pdeBufferBoxVSize, REAL& kappa ) {/* for boundary condition */
 	/* MODEL START */
 
 	ERROR( "unimplmented." );
