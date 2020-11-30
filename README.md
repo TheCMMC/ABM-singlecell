@@ -1,6 +1,6 @@
 # ABM microcarriers
 
-This software is used for the Proof of Concept project by the [CMMC](thecmmc.org).
+This software is used for the Proof of Concept project by the [CMMC](thecmmc.org). The technical report describing the proof of concept can be found [here](https://zenodo.org/record/4264611). 
 
 ## About
 
