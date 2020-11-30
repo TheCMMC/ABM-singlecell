@@ -48,6 +48,13 @@ typedef enum _agent_type_e {
 	NUM_AGENT_TYPES
 } agent_type_e;
 
+typedef enum _agent_mechanic_type_e { 
+        MCARRIER_INERT,
+        CELL_A_LIVE,
+        CELL_A_DEATH,
+        NUM_MECH_TYPES,
+} agent_mechanic_type_e;
+
 typedef enum _cell_state_real_e {
         CELL_MODEL_REAL_RADIUS,
         CELL_MODEL_REAL_MASS,
@@ -60,9 +67,15 @@ typedef enum _cell_state_real_e {
         NUM_CELL_STATE_REALS
 } cell_state_real_e;
 
+typedef enum _cell_state_int_e { 
+        CELL_MODEL_INT_STATE,
+        NUM_CELL_STATE_INTS
+} cell_state_int_e ;
+
 /* ODE parameters for biomas change */
 typedef enum _ode_net_GrowingCell_var_e {
         ODE_NET_VAR_GROWING_CELL_BIOMASS,  // dm/dt = constant
+        ODE_NET_VAR_STRESS_TIME,   // dT/dt = heaviside 
         NUM_ODE_NET_VAR_GROWING_CELL
 } ode_net_GrowingCell_var_e;
 
@@ -89,7 +102,9 @@ typedef enum _particle_extra_output_real_e {
 } particle_extra_output_real_e;
 
 typedef enum _grid_summary_real_e {
+        GRID_SUMMARY_REAL_MICROCARRIERS,
         GRID_SUMMARY_REAL_LIVE_CELLS,
+        GRID_SUMMARY_REAL_DEATH,
         GRID_SUMMARY_REAL_MAX_DISP,
         GRID_SUMMARY_REAL_MAX_GROWRATE,
         NUM_GRID_SUMMARY_REALS
@@ -109,32 +124,32 @@ typedef enum _junction_end_real_e {
 } junction_end_real_e;
 
 
-const REAL A_DIFFUSION_COEFF_CELLS[ NUM_AGENT_TYPES ] = { 0.0 , 0.0 };
-const REAL A_AGENT_FRICIONAL_DRAG[ NUM_AGENT_TYPES ] = { 1.2e-4, 1e-5  }; 
-const REAL A_CELL_RADIUS[ NUM_AGENT_TYPES ] = {  150.0 *0.5, 14.5 };
-const REAL A_DIVISION_RADIUS[  NUM_AGENT_TYPES ] = { 0.0 , 15.0 } ;
-const REAL A_MIN_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 11.0};
-const REAL A_MAX_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 16.0};
-const REAL A_MAX_CELL_VOL[NUM_AGENT_TYPES]={ 0.0, 4.0 * MY_PI * 16.0*16.0*16.0 / 3.0  };
+const REAL A_DIFFUSION_COEFF_CELLS[ NUM_AGENT_TYPES ] = { 0.0, 0.0 };
+const REAL A_AGENT_FRICIONAL_DRAG[ NUM_AGENT_TYPES ] = { 1.2e-4, 1e-5 }; 
+const REAL A_CELL_RADIUS[ NUM_AGENT_TYPES ] = {  150.0 *0.5, 14.5 }; //14.5
+const REAL A_DIVISION_RADIUS[  NUM_AGENT_TYPES ] = { 0.0, 15.0 };
+const REAL A_MIN_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 11.0  } ;
+const REAL A_MAX_CELL_RADIUS[ NUM_AGENT_TYPES ] ={ 0.0, 16.0  };
+const REAL A_MAX_CELL_VOL[NUM_AGENT_TYPES]={ 0.0, 4.0*MY_PI*16.0*16.0*16.0/3.0 };
 const REAL A_MIN_CELL_VOL[NUM_AGENT_TYPES]={ 0.0,  523.6 };
 
 // parameters of shoving adhesion
-const REAL A_AGENT_SHOVING_SCALE[NUM_AGENT_TYPES] = {1.0, 1.0} ;
-const REAL A_AGENT_SHOVING_LIMIT[ NUM_AGENT_TYPES ] = { 0.0 , 0.0 } ;
-const REAL A_AGENT_ADHESION_S[NUM_AGENT_TYPES][NUM_AGENT_TYPES]={{0.0, 0.0}, {0.0, 0.01} };
+const REAL A_AGENT_SHOVING_SCALE[ NUM_MECH_TYPES ] = {1.0, 1.0, 1.0} ;
+const REAL A_AGENT_SHOVING_LIMIT[ NUM_MECH_TYPES ] = { 0.0 , 0.0, 0.0} ;
+const REAL A_AGENT_ADHESION_S[NUM_MECH_TYPES][NUM_MECH_TYPES]={{0.0, 0.0, 0.0}, {0.0, 0.0,0.0},{0.0,0.0,0.0}};
 
 // parameters of bonding forces: https://doi.org/10.1371/journal.pone.0191089 
-const REAL A_AGENT_BOND_S[NUM_AGENT_TYPES][NUM_AGENT_TYPES]={{0.2, 0.2}, {0.2, 0.2} };
-const REAL A_AGENT_BOND_DESTROY_FACTOR[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{0.0, 1.1}, {1.1, 1.1} };
-const REAL A_AGENT_BOND_CREATE_FACTOR[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{0.0, 1.1}, {1.1, 1.1} };
-const REAL A_AGENT_STIFFNESS[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{2.2e-3,1e-3},{1e-3,1e-3}} ;
+const REAL A_AGENT_BOND_S[NUM_MECH_TYPES][NUM_MECH_TYPES]={{0.2,0.2,0.2}, {0.2,0.2,0.2},{0.2,0.2,0.2}};
+const REAL A_AGENT_BOND_DESTROY_FACTOR[NUM_MECH_TYPES][NUM_MECH_TYPES] = {{0.0,1.1,1.0},{1.1,1.1,1.0},{1.0,1.0,1.0}};
+const REAL A_AGENT_BOND_CREATE_FACTOR[NUM_MECH_TYPES][NUM_MECH_TYPES] = {{0.0,1.1,1.0}, {1.1,1.1,1.0},{1.0,1.0,1.0}};
+const REAL A_AGENT_STIFFNESS[NUM_MECH_TYPES][NUM_MECH_TYPES] = {{2.2e-3,1e-3,1e-3},{1e-3,1e-3,1e-3},{1e-3,1e-3,1e-3}} ;
 
 
-const REAL A_DENSITY_BIOMASS[ NUM_AGENT_TYPES ] = { 8.321827089772318e-17 , 8.355634512324506e-16  }; // Kg / um^3
+const REAL A_DENSITY_BIOMASS[ NUM_AGENT_TYPES ] = {8.321827089772318e-17,8.355634512324506e-16 }; // Kg / um^3
 const REAL DENSITY_MEDIUM = 1.0e-18   ;// Kg / um^3 
-const REAL A_MCARRIER_DENSITY_PER_UB =  1000 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
-const REAL INIT_CELLS_PER_MICROCARRIER = 4; //10;
-const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = { 150.0 * 1.25, 20.0 * 1.25 };
+const REAL A_MCARRIER_DENSITY_PER_UB =  1 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
+const REAL INIT_CELLS_PER_MICROCARRIER = 5; //10;
+const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = {150.0*1.25, 20.0*1.25};
 
 
 const REAL ADHESION_S = 0.01;
@@ -148,7 +163,7 @@ const REAL STEP_TIME = 1.0 ;
 const REAL NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1 ;
 
 // cell growth
-const REAL DOUBLING_TIME = BASELINE_TIME_STEP_DURATION * 100000 ; // I also used 100000
+const REAL DOUBLING_TIME = BASELINE_TIME_STEP_DURATION * 1000 ; // I also used 100000
 const REAL ODE_CELL_GROWTH_CONSTANT = A_DENSITY_BIOMASS[1] * ( 4.0 * MY_PI * 15.0*15.0*15.0 / 3.0 ) /( 2.0 * DOUBLING_TIME ); //   4pi/3 ( R_div ^3) * density / (2 * doublingtime)
 const REAL STRESS_TRESHOLD = 1e-7 ; //1e-7 ; // 
 
@@ -170,11 +185,15 @@ const REAL DYNAMIC_VISCOSITY =  1.0e-9; //  [micro N][s]/ ( [ micro m] [micro m]
 const S32 AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP = 1 ;
 const REAL AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION = BASELINE_TIME_STEP_DURATION / ( (REAL) AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP  ); 
 
-const REAL VELOCITY_DAMPING_TEST  = 1.0; //1.0e-4;
-/* MODEL END */
+const REAL VELOCITY_DAMPING_TEST  = 0.0; // 1.0; //1.0e-4;
 
 // gravity acceleration
 const REAL STANDARD_GRAVITY = 9.80665e-6 ; // micro meter / ( s^2 )
 
+// cell death parameters 
+const REAL MECH_STRESS_TRESHOLD_DEATH = 1.0 ;  //  2.5e-7 ;//5e-7 ;
+const REAL TIME_TO_DEATH = BASELINE_TIME_STEP_DURATION * 1000 ;   
+
+/* MODEL END */
 #endif/* #ifndef __MODEL_DEFINE_H__ */
 

@@ -73,11 +73,13 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
                         REAL biomass = volume_agent(A_CELL_RADIUS[AGENT_MCARRIER] ) * A_DENSITY_BIOMASS[ AGENT_MCARRIER ] ;
                         state.setModelReal( CELL_MODEL_REAL_MASS, biomass );
                         state.setModelReal( CELL_MODEL_REAL_EPS,  0.0 );
-                        state.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT,  0.0 ) ;
+                        state.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT,  1.0 ) ;
                         state.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
                         state.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
                         state.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
                         state.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
+
+                        state.setModelInt( CELL_MODEL_INT_STATE, MCARRIER_INERT ) ; 
 
 			state.setMechIntrctBdrySphere( A_CELL_D_MAX[AGENT_MCARRIER] );
 
@@ -142,6 +144,9 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
                              state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
                              state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
+                             state_c.setODEVal(0, ODE_NET_VAR_STRESS_TIME, 0.0 );
+
+                             state_c.setModelInt( CELL_MODEL_INT_STATE, CELL_A_LIVE ) ; 
 
 
                              state_c.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );
@@ -162,11 +167,32 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
 void ModelRoutine::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, const SpAgent& spAgent, const NbrUBEnv& nbrUBEnv, const Vector<double>& v_y, Vector<double>& v_f ) {
 	/* MODEL START */
-        // dr/dt = constant * K^2 / (K^2 + stress^2 )
-        REAL mech_stress  = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS  ) ;
-        REAL factor =  STRESS_TRESHOLD*STRESS_TRESHOLD / ( STRESS_TRESHOLD*STRESS_TRESHOLD +  mech_stress*mech_stress  );
-        REAL r_Growth = ODE_CELL_GROWTH_CONSTANT * factor ; //* biomass;
-        v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth ;
+
+        S32 mtype = spAgent.state.getModelInt( CELL_MODEL_INT_STATE )    ; 
+        //cout << " ODE-type " << mtype << endl; 
+        if ( mtype == CELL_A_LIVE )  { 
+           REAL mech_stress  = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS  ) ;
+           REAL factor =  STRESS_TRESHOLD*STRESS_TRESHOLD / ( STRESS_TRESHOLD*STRESS_TRESHOLD +  mech_stress*mech_stress  );
+           REAL r_Growth = ODE_CELL_GROWTH_CONSTANT * factor ; //* biomass;
+           v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth ;
+
+           // cell death: dT/dt = Hevisaide( Stress_i - Stress_0 ) 
+           REAL heaviside = 0.0 ;
+           if ( mech_stress >  MECH_STRESS_TRESHOLD_DEATH ) {
+               heaviside = 1.0;
+           }
+           v_f[ODE_NET_VAR_STRESS_TIME ]= heaviside ;
+        }
+        else if ( mtype == CELL_A_DEATH )  { 
+           REAL r_Growth = -0.5 *ODE_CELL_GROWTH_CONSTANT  ; //* biomass;
+           v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth ;
+           v_f[ODE_NET_VAR_STRESS_TIME ] = 0.0 ;
+        }
+        else { // error
+           v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= 0.0 ;
+           v_f[ODE_NET_VAR_STRESS_TIME ] = 0.0 ;
+
+        }
 
 
 	/* MODEL END */
@@ -177,20 +203,16 @@ void ModelRoutine::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, cons
 void ModelRoutine::updateSpAgentState( const VIdx& vIdx, const JunctionData& junctionData, const VReal& vOffset, const NbrUBEnv& nbrUBEnv, SpAgentState& state/* INOUT */ ) {
 	/* MODEL START */
 
-    REAL uptakePct = state.getModelReal( CELL_MODEL_REAL_UPTAKE_PCT );
+    //REAL uptakePct = state.getModelReal( CELL_MODEL_REAL_UPTAKE_PCT );
     S32 type = state.getType() ; // id of cell type
-
-    
      
-    if ( ( type == AGENT_CELL_A ) && (  uptakePct > 0.0 ) ) {
-
+    //if ( ( type == AGENT_CELL_A ) && (  uptakePct > 0.0 ) ) {
+    if ( type == AGENT_CELL_A )  {
 
         REAL Biomas = state.getODEVal( 0, ODE_NET_VAR_GROWING_CELL_BIOMASS );
         REAL Inert = 0.0;
 
         REAL cellVol = (Biomas + Inert)/A_DENSITY_BIOMASS[type];
-           
-         
 
         if ( cellVol > A_MAX_CELL_VOL[type] ) {
             cellVol = A_MAX_CELL_VOL[type] ;
@@ -198,13 +220,20 @@ void ModelRoutine::updateSpAgentState( const VIdx& vIdx, const JunctionData& jun
         }
         CHECK( cellVol >= 0.0 );
         REAL newRadius = radius_from_volume( cellVol );
-        
 
         state.setModelReal(  CELL_MODEL_REAL_RADIUS, newRadius );
         state.setModelReal( CELL_MODEL_REAL_MASS, Biomas );
 
-
+        //REAL ODE_NET_VAR_STRESS_TIME
+        REAL stress_time = state.getODEVal(0, ODE_NET_VAR_STRESS_TIME);
+        if ( stress_time >  TIME_TO_DEATH ) {
+            // change the cell to cell death type
+            state.setModelInt( CELL_MODEL_INT_STATE, CELL_A_DEATH );
+            state.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, -1.0 ) ;
+            state.setODEVal(0, ODE_NET_VAR_STRESS_TIME, 0.0 );
+        }
     }
+ 
 
     /* MODEL END */
      return;
@@ -229,30 +258,27 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 
     S32 type = spAgent.state.getType() ;
 
-    if ( type == AGENT_CELL_A ) {
+    if ( type == AGENT_CELL_A )  {
 
         //REAL rnd_num = Util::getModelRand(MODEL_RNG_UNIFORM_10PERCENT); //0.9-1.1
         REAL testrad = A_DIVISION_RADIUS[type] ; //* rnd_num;
+        REAL cell_rad = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
 
-        if ((spAgent.state.getModelReal(CELL_MODEL_REAL_UPTAKE_PCT)>0.0)/* live cells */   ) {
-            REAL cell_rad = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
-
-            if( cell_rad >= testrad ) { 
-                 
+        if ( cell_rad >= testrad ) {
+            if ( spAgent.state.getModelInt(CELL_MODEL_INT_STATE) == CELL_A_LIVE ) {     
                 for( S32 i = 0 ; i < spAgent.junctionData.getNumJunctions() ; i++ ) {
                      const JunctionEnd& end = spAgent.junctionData.getJunctionEndRef( i );
-                     if( end.getType() == 1 ) {
+                     if ( end.getType() == JUNCTION_END_TYPE_MICROCARRIER ) {
                         divide = true;
                         break;
                      }
                 }
-
-            }
-            else if ( cell_rad <= A_MIN_CELL_RADIUS[type] ) {
-                disappear = true;
             }
         }
-
+        else if ( cell_rad <= A_MIN_CELL_RADIUS[type] ) {
+            //cout << "seeee " << cell_rad << "  " << type <<  endl;
+            disappear = true;
+        }
     }
 
     /* MODEL END */
@@ -393,6 +419,7 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
     motherState.setModelReal( CELL_MODEL_REAL_MASS, mother_biomas  );
     motherState.setModelReal( CELL_MODEL_REAL_EPS, mother_inert  );
     motherState.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 );
+    motherState.setModelInt( CELL_MODEL_INT_STATE, CELL_A_LIVE );
 
     dougther_biomas = biomas - mother_biomas;
     dougther_inert = inert - mother_inert;
@@ -410,10 +437,12 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
     daughterState.setModelReal( CELL_MODEL_REAL_MASS, dougther_biomas );
     daughterState.setModelReal( CELL_MODEL_REAL_EPS, dougther_inert );
     daughterState.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 );
+    daughterState.setModelInt( CELL_MODEL_INT_STATE, CELL_A_LIVE );
 
     // change the new biomass on the  ODEs
     motherState.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, mother_biomas);
     daughterState.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, dougther_biomas);
+    daughterState.setODEVal(0, ODE_NET_VAR_STRESS_TIME, 0.0 );
 
     // mechanical interaction range
     motherState.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );

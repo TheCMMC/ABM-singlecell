@@ -35,7 +35,6 @@ void ModelRoutine::initJunctionSpAgent( const VIdx& vIdx0, const SpAgent& spAgen
     REAL dist_threshold = factor * (R0 + R1);
 
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
-    //if (  type0 != type1 ) {
  
        if (  dist < dist_threshold )  {
           link = true;
@@ -68,19 +67,22 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     S32 type0 = spAgent0.state.getType();
     S32 type1 = spAgent1.state.getType();
 
-    REAL R0 = A_AGENT_SHOVING_SCALE[type0]*spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
-    REAL R1 = A_AGENT_SHOVING_SCALE[type1]*spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+    S32 mtype0 = spAgent0.state.getModelInt( CELL_MODEL_INT_STATE ) ;
+    S32 mtype1 = spAgent1.state.getModelInt( CELL_MODEL_INT_STATE ) ;
+
+    REAL R0 = A_AGENT_SHOVING_SCALE[mtype0]*spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
+    REAL R1 = A_AGENT_SHOVING_SCALE[mtype1]*spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
     REAL dist_threshold = R0 + R1;
-    REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[type0] - 0.5*A_AGENT_SHOVING_LIMIT[type1];
+    REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[mtype0] - 0.5*A_AGENT_SHOVING_LIMIT[mtype1];
     REAL mag = 0.0;
     REAL stress = 0.0 ; 
     REAL xij  = D - dist ;
 
     
-    if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
-        REAL sij = A_AGENT_BOND_S[type0][type1] ;
+    if ( A_AGENT_BOND_S[mtype0][mtype1] > 0.0 ){
+        REAL sij = A_AGENT_BOND_S[mtype0][mtype1] ;
         if(spAgent0.junctionData.isLinked(spAgent1.junctionData) == true) {
-            if( dist > A_AGENT_BOND_DESTROY_FACTOR[type0][type1]* dist_threshold ) {
+            if( dist > A_AGENT_BOND_DESTROY_FACTOR[mtype0][mtype1]* dist_threshold ) {
                 unlink = true;/* break junction */
                 //cout << " broken juntion " << endl;
             }
@@ -105,7 +107,7 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
             }
         }
         else {/* no junction */
-            if( dist < A_AGENT_BOND_CREATE_FACTOR[type0][type1]*dist_threshold ) {
+            if( dist < A_AGENT_BOND_CREATE_FACTOR[mtype0][mtype1]*dist_threshold ) {
 
                link = true;/* form junction */
 
@@ -131,8 +133,8 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     //if ( type0 == type1 ) {
     //   cout << "force " << mag << " xij " << xij << endl;
     //}
-    mag = A_AGENT_STIFFNESS[type0][type1] * mag ;
-    stress  = A_AGENT_STIFFNESS[type0][type1] * stress ;
+    mag = A_AGENT_STIFFNESS[mtype0][mtype1] * mag ;
+    stress  = A_AGENT_STIFFNESS[mtype0][mtype1] * stress ;
        
 
     mechIntrctData0.setModelReal(CELL_MECH_REAL_FORCE_X,vDir[0]*mag);
