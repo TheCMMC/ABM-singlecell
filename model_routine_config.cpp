@@ -233,7 +233,7 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 	/* MODEL START */
 
 	fileOutputInfo.v_spAgentParticleOutput.assign( NUM_AGENT_TYPES , true );
-	CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
+	// CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
 	fileOutputInfo.v_particleExtraOutputRealName.resize( NUM_PARTICLE_EXTRA_OUTPUT_REALS );
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = "radius";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_STRESS] = "stress";

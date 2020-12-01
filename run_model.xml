@@ -70,7 +70,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	regridding: regridding interval (unit: baseline time steps), regridding should be equal to or smaller than load_balance and regridding should equally divide load_balance, optional, integer, default=100, [1,)
 	checkpoint: checkpoint interval (0: turn off, unit: baseline time steps), optional, default=0, integer, [0,)
 -->
-<interval output="2000" summary="1" load_balance="1000000" regridding="1000000" checkpoint="1000000"/>
+<interval output="100" summary="1" load_balance="1000000" regridding="1000000" checkpoint="1000000"/>
 
 <!-- amr, controls adaptive mesh refinement
 	refine_ratio: adaptive mesh refinement ratio between two consecutive levels, optional, default=2, 2|4|8
