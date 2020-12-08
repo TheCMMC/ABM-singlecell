@@ -132,9 +132,10 @@ const REAL A_AGENT_STIFFNESS[NUM_AGENT_TYPES][NUM_AGENT_TYPES] = {{2.2e-3,1e-3},
 
 const REAL A_DENSITY_BIOMASS[ NUM_AGENT_TYPES ] = { 8.321827089772318e-17 , 8.355634512324506e-16  }; // Kg / um^3
 const REAL DENSITY_MEDIUM = 1.0e-18   ;// Kg / um^3 
-const REAL A_MCARRIER_DENSITY_PER_UB =  1000 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
+const REAL A_MCARRIER_DENSITY_PER_UB =  1 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
 const REAL INIT_CELLS_PER_MICROCARRIER = 4; //10;
-const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = { 150.0 * 1.25, 20.0 * 1.25 };
+const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = {150.0 * 1.25, 20.0 * 5}; // this is set very high for single cell (or a couple) should be less for many cell simulations to avoid large computational costs  //{ 150.0 * 1.25, 20.0 * 1.25 };
+const REAL NUM_CELLS = 1; //for now only 1 works, since the cells will all be placed at the center
 
 
 const REAL ADHESION_S = 0.01;
@@ -149,7 +150,7 @@ const REAL NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1 ;
 
 // cell growth
 const REAL DOUBLING_TIME = BASELINE_TIME_STEP_DURATION * 100000 ; // I also used 100000
-const REAL ODE_CELL_GROWTH_CONSTANT = A_DENSITY_BIOMASS[1] * ( 4.0 * MY_PI * 15.0*15.0*15.0 / 3.0 ) /( 2.0 * DOUBLING_TIME ); //   4pi/3 ( R_div ^3) * density / (2 * doublingtime)
+const REAL ODE_CELL_GROWTH_CONSTANT = 0 ; // A_DENSITY_BIOMASS[1] * ( 4.0 * MY_PI * 15.0*15.0*15.0 / 3.0 ) /( 2.0 * DOUBLING_TIME ); //   4pi/3 ( R_div ^3) * density / (2 * doublingtime)
 const REAL STRESS_TRESHOLD = 1e-7 ; //1e-7 ; // 
 
 // Bioreactor Geometry

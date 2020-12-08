@@ -38,122 +38,40 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
 	if( init == true ) {
 		const S64 numUBs = regionVSize[0] * regionVSize[1] * regionVSize[2];
+    for (S64 j = 0 ; J < NUM_CELLS ; j++ ) {
+      VReal vPos_c;
+      VIdx vIdx_c;
+      VReal vOffset_c;
+      SpAgentState state_c;
+      REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ]
 
-		S64 numMcarriers = ( S64 )( ( REAL )numUBs * A_MCARRIER_DENSITY_PER_UB  );
+      vPos_c = VReal::ZERO ;
 
-		for( S64 j = 0 ; j < numMcarriers ; j++ ) {
+      vIdx_c[0] = (S64) ( REAL regionVSize[0] / 2) ;
+      vIdx_c[1] = (S64) ( REAL regionVSize[1] / 2) ;
+      vIdx_c[2] = 0 ;
+       
+      state_c.setType( AGENT_CELL_A );
+      state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
+      REAL biomass = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
+      state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass );
+      state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
+      state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
-			VReal vPos;
-			VIdx vIdx;
-			VReal vOffset;
-			SpAgentState state;
+      state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
 
-			for( S32 dim = 0 ; dim < DIMENSION ; dim++ ) {
+      state_c.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );
 
-				REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM ) ;/* [0.0,1.0) */
-				if( randScale >= 1.0 ) {
-					randScale = 1.0 - EPSILON;
-				}
-				CHECK( randScale >= 0.0 );
-				CHECK( randScale < 1.0 );
-				vPos[dim] = ( REAL )startVIdx[dim] * IF_GRID_SPACING + ( REAL )regionVSize[dim] * IF_GRID_SPACING * randScale;
-				//vPos[dim] =  REAL ( Info::getDomainSize( dim ) ) * IF_GRID_SPACING  * 0.5  +   BIO_RADIUS * randScale ;
-			}
-
-                        REAL dist = SQRT( (vPos[0] - xo)*(vPos[0] - xo) + (vPos[1] - yo)*(vPos[1] - yo) );
-                        if ( ( dist >= BIO_RADIUS - 290.0 ) || ( vPos[2] >= BIO_HEIGHT - 290.0  ) || ( vPos[2] <= 290.0 ) ) {
-                             continue ;
-                        }
-
-			Util::changePosFormat1LvTo2Lv( vPos, vIdx, vOffset );
-
-
-			state.setType( AGENT_MCARRIER );
-			state.setModelReal( CELL_MODEL_REAL_RADIUS, A_CELL_RADIUS[AGENT_MCARRIER] );
-                        REAL biomass = volume_agent(A_CELL_RADIUS[AGENT_MCARRIER] ) * A_DENSITY_BIOMASS[ AGENT_MCARRIER ] ;
-                        state.setModelReal( CELL_MODEL_REAL_MASS, biomass );
-                        state.setModelReal( CELL_MODEL_REAL_EPS,  0.0 );
-                        state.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT,  0.0 ) ;
-                        state.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
-                        state.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
-                        state.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
-                        state.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
-
-			state.setMechIntrctBdrySphere( A_CELL_D_MAX[AGENT_MCARRIER] );
-
-			v_spAgentVIdx.push_back( vIdx );
-			v_spAgentState.push_back( state );
-			v_spAgentVOffset.push_back( vOffset );
-
-
-                        // for each microcarrier generate cells
-                        S32 numCells =  INIT_CELLS_PER_MICROCARRIER ; // should from Poisson distribution
-			for ( S32 i = 0 ; i < numCells ; i++ ) {
-
-                             VReal vPos_c;
-                             VIdx vIdx_c;
-                             VReal vOffset_c;
-                             SpAgentState state_c;
-
-                             REAL randScale = Util::getModelRand( MODEL_RNG_UNIFORM ) ;/* [0.0,1.0) */
-                             if( randScale >= 1.0 ) {
-                                 randScale = 1.0 - EPSILON;
-                             }
-                             REAL cellrad = A_MIN_CELL_RADIUS[AGENT_CELL_A] + ( A_CELL_RADIUS[AGENT_CELL_A] - A_MIN_CELL_RADIUS[AGENT_CELL_A] ) * randScale ;
-                              
-                             REAL rho = A_CELL_RADIUS[AGENT_MCARRIER] + cellrad ;
-
-                             
-
-                             REAL V1, V2, V3, S ;
-                             do {
-                                 V1 = 2.0 * Util::getModelRand( MODEL_RNG_UNIFORM ) - 1.0 ;
-                                 V2 = 2.0 * Util::getModelRand( MODEL_RNG_UNIFORM ) - 1.0 ;
-                                 V3 = 2.0 * Util::getModelRand( MODEL_RNG_UNIFORM ) - 1.0 ;
-
-                                 S  = V1*V1 +  V2*V2 + V3*V3 ;
-                             }
-                             while (  S >= 1.0  || S < 0 ) ;
-
-			     REAL sqrtS = SQRT( S ) ;
-			     vPos_c[0] = vPos[0] + rho * V1 / sqrtS  ;
-			     vPos_c[1] = vPos[1] + rho * V2 / sqrtS  ;
-			     vPos_c[2] = vPos[2] + rho * V3 / sqrtS  ;
- 
-                             for ( S32 k = 0 ; k < 3; k++ ) { 
-                                if  ( vPos_c[k] > 32 * IF_GRID_SPACING )  // 32 ?? change this 
-                                    vPos_c[k] =  vPos_c[k] - 32.0 * IF_GRID_SPACING ; 
-                                else if (  vPos_c[0] < 0.0 )  
-                                    vPos_c[k] =  32.0 * IF_GRID_SPACING - vPos_c[k] ;
- 
-                             }
-			     Util::changePosFormat1LvTo2Lv( vPos_c, vIdx_c, vOffset_c );
-                                       
-
-			     state_c.setType( AGENT_CELL_A );
-                             state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
-                             REAL biomass = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
-                             state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass );
-                             state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
-                             state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
-                             state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
-                             state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
-                             state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
-                             state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
-
-                             state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
-
-
-                             state_c.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );
-
-                             v_spAgentVIdx.push_back( vIdx_c );
-                             v_spAgentState.push_back( state_c );
-                             v_spAgentVOffset.push_back( vOffset_c );
-                             
-                            
-                        }
-		}
-	}
+      v_spAgentVIdx.push_back( vIdx_c );
+      v_spAgentState.push_back( state_c );
+      v_spAgentVOffset.push_back( vOffset_c );
+    }
+  }
+  
 
 	/* MODEL END */
 
@@ -165,7 +83,7 @@ void ModelRoutine::spAgentCRNODERHS( const S32 odeNetIdx, const VIdx& vIdx, cons
         // dr/dt = constant * K^2 / (K^2 + stress^2 )
         REAL mech_stress  = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS  ) ;
         REAL factor =  STRESS_TRESHOLD*STRESS_TRESHOLD / ( STRESS_TRESHOLD*STRESS_TRESHOLD +  mech_stress*mech_stress  );
-        REAL r_Growth = ODE_CELL_GROWTH_CONSTANT * factor ; //* biomass;
+        REAL r_Growth = ODE_CELL_GROWTH_CONSTANT * factor ; //* biomass (set to zero for adhesion simulation);
         v_f[ODE_NET_VAR_GROWING_CELL_BIOMASS]= r_Growth ;
 
 
@@ -239,13 +157,13 @@ void ModelRoutine::updateSpAgentBirthDeath( const VIdx& vIdx, const SpAgent& spA
 
             if( cell_rad >= testrad ) { 
                  
-                for( S32 i = 0 ; i < spAgent.junctionData.getNumJunctions() ; i++ ) {
-                     const JunctionEnd& end = spAgent.junctionData.getJunctionEndRef( i );
-                     if( end.getType() == 1 ) {
-                        divide = true;
-                        break;
-                     }
-                }
+                // for( S32 i = 0 ; i < spAgent.junctionData.getNumJunctions() ; i++ ) {
+                //      const JunctionEnd& end = spAgent.junctionData.getJunctionEndRef( i );
+                //      if( end.getType() == 1 ) {
+                divide = true;
+                //         break;
+                //      }
+                // }
 
             }
             else if ( cell_rad <= A_MIN_CELL_RADIUS[type] ) {
@@ -297,14 +215,14 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   REAL stress = mechIntrctData.getModelReal( CELL_MECH_REAL_STRESS  );    
   //S32 type = state.getType();    
 
-  // Compute force with cylindrical boundary  
-  REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
-  REAL delta =  dist + radius - BIO_RADIUS ;
-  if ( delta  > 0.0 ) { 
-    Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
-    vForce[0] += Fmag * (x - xo) / dist ;
-    vForce[1] += Fmag * (y - yo) / dist ;
-  }
+  // // Compute force with cylindrical boundary  
+  // REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
+  // REAL delta =  dist + radius - BIO_RADIUS ;
+  // if ( delta  > 0.0 ) { 
+  //   Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
+  //   vForce[0] += Fmag * (x - xo) / dist ;
+  //   vForce[1] += Fmag * (y - yo) / dist ;
+  // }
 
   // compute forces with bottom and ceiling
   if ( z + radius - BIO_HEIGHT ) { 
