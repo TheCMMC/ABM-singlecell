@@ -216,9 +216,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   //S32 type = state.getType();    
 
   // // Compute force with cylindrical boundary  
-  // REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
-  // REAL delta =  dist + radius - BIO_RADIUS ;
-  // if ( delta  > 0.0 ) { 
+  REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
+    // if ( delta  > 0.0 ) { 
   //   Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
   //   vForce[0] += Fmag * (x - xo) / dist ;
   //   vForce[1] += Fmag * (y - yo) / dist ;
@@ -229,10 +228,10 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
     delta = z + radius - BIO_HEIGHT; 
     vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
   }
-  else if ( radius - z ) {
-    delta = radius ;
-    vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
-  }
+  // else if ( radius - z ) {
+  //   delta = radius ;
+  //   vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
+  // }
    
   // Gravity and Buoyancy force
   vForce[2] += state.getModelReal(CELL_MODEL_REAL_MASS)*STANDARD_GRAVITY *(DENSITY_MEDIUM/A_DENSITY_BIOMASS[type] - 1.0);    
@@ -459,7 +458,7 @@ static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, con
  
   state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
   state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
-  state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] );
+  state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] + 0.01 );
 
 }
 #endif
