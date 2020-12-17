@@ -38,17 +38,15 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
 	if( init == true ) {
 		const S64 numUBs = regionVSize[0] * regionVSize[1] * regionVSize[2];
-    for (S64 j = 0 ; J < NUM_CELLS ; j++ ) {
-      VReal vPos_c;
+    for (S64 j = 0 ; j < NUM_CELLS ; j++ ) {
+      VReal vPos_c = VReal::ZERO ;
       VIdx vIdx_c;
       VReal vOffset_c;
       SpAgentState state_c;
-      REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ]
+      REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ];
 
-      vPos_c = VReal::ZERO ;
-
-      vIdx_c[0] = (S64) ( REAL regionVSize[0] / 2) ;
-      vIdx_c[1] = (S64) ( REAL regionVSize[1] / 2) ;
+      vIdx_c[0] = (S64) ( regionVSize[0] / (S64) (2)) ;
+      vIdx_c[1] = (S64) ( regionVSize[1] / (S64) (2)) ;
       vIdx_c[2] = 0 ;
        
       state_c.setType( AGENT_CELL_A );
@@ -217,7 +215,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
 
   // // Compute force with cylindrical boundary  
   REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
-    // if ( delta  > 0.0 ) { 
+  REAL delta =  dist + radius - BIO_RADIUS ;
+  // if ( delta  > 0.0 ) { 
   //   Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
   //   vForce[0] += Fmag * (x - xo) / dist ;
   //   vForce[1] += Fmag * (y - yo) / dist ;
