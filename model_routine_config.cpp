@@ -242,7 +242,10 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VX] = "vx";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VY] = "vy";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VZ] = "vz";
-  
+  	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FX] = "fx";
+	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FY] = "fy";
+	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FZ] = "fz";
+
 	fileOutputInfo.v_particleExtraOutputVRealName.clear();
 	fileOutputInfo.v_phiOutput.clear();
 	fileOutputInfo.v_phiOutputDivideByKappa.clear();

@@ -58,9 +58,6 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
       state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_FX, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_FY, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_FZ, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
       state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
@@ -388,80 +385,83 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
 // Verlet/leapfrog algorithm for agents translation
 static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity,  SpAgentState& state, /* INOUT */ VReal& vDisp ) {
 
-  REAL m = state.getModelReal( CELL_MODEL_REAL_MASS );
-  S32 type = state.getType() ;
-  REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
+  // REAL m = state.getModelReal( CELL_MODEL_REAL_MASS );
+  // S32 type = state.getType() ;
+  // REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
     
-  VReal oldStaggeredVLinear;
-  VReal newStaggeredVLinear;
-  VReal vLinear;
-  VReal oldVDisp;
-  VReal newVDisp;
-  VReal tmpVForce = vForce ;
+  // VReal oldStaggeredVLinear;
+  // VReal newStaggeredVLinear;
+  // VReal vLinear;
+  // VReal oldVDisp;
+  // VReal newVDisp;
+  // VReal tmpVForce = vForce ;
 
 
-  if ( Info::getCurBaselineTimeStep() > 0 ) {
-    oldStaggeredVLinear[0] = state.getModelReal( CELL_MODEL_REAL_DX ) ; // um/s
-    oldStaggeredVLinear[1] = state.getModelReal( CELL_MODEL_REAL_DY ) ; // um/s
-    oldStaggeredVLinear[2] = state.getModelReal( CELL_MODEL_REAL_DZ ) ; // um/s
-  }
-  else {
+  // if ( Info::getCurBaselineTimeStep() > 0 ) {
+  //   oldStaggeredVLinear[0] = state.getModelReal( CELL_MODEL_REAL_DX ) ; // um/s
+  //   oldStaggeredVLinear[1] = state.getModelReal( CELL_MODEL_REAL_DY ) ; // um/s
+  //   oldStaggeredVLinear[2] = state.getModelReal( CELL_MODEL_REAL_DZ ) ; // um/s
+  // }
+  // else {
     
-    oldStaggeredVLinear = FluidVelocity  -  ( vForce ) * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 ) ;
-    //oldStaggeredVLinear = VReal::ZERO;
-    //cout << " m " << m;
-    //cout << " Fluid " << FluidVelocity;
-    //cout << " vForce " << vForce ;
-    //cout << " timestep  " << AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION  ;
-    //cout << " innertia " <<  AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 )  ;
-    //cout << endl ;
+  //   oldStaggeredVLinear = FluidVelocity  -  ( vForce ) * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 ) ;
+  //   //oldStaggeredVLinear = VReal::ZERO;
+  //   //cout << " m " << m;
+  //   //cout << " Fluid " << FluidVelocity;
+  //   //cout << " vForce " << vForce ;
+  //   //cout << " timestep  " << AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION  ;
+  //   //cout << " innertia " <<  AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 )  ;
+  //   //cout << endl ;
      
-  }
+  // }
 
-  vDisp = VReal::ZERO;
-  oldVDisp = oldStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+  // vDisp = VReal::ZERO;
+  // oldVDisp = oldStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
 
-  for( S32 i = 0 ; i < AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP ; i++ ) { 
+  // for( S32 i = 0 ; i < AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP ; i++ ) { 
 
-    VReal G = ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; // drag force
-    newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_{n-1/2}) * (deltaT/m), G: damping */
+  //   VReal G = ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; // drag force
+  //   newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_{n-1/2}) * (deltaT/m), G: damping */
   
-    newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+  //   newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
-    vLinear = ( newVDisp + oldVDisp ) / ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION * 2.0 );/* v_n = (pos_{n+1} - pos_{n-1}) / (deltaT * 2.0) */
+  //   vLinear = ( newVDisp + oldVDisp ) / ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION * 2.0 );/* v_n = (pos_{n+1} - pos_{n-1}) / (deltaT * 2.0) */
 
-    G =    ( FluidVelocity - vLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; 
-    newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_n) * (deltaT/m) */
+  //   G =    ( FluidVelocity - vLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; 
+  //   newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_n) * (deltaT/m) */
 
-    newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+  //   newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
-    if ( type == -1 ) {
-    cout << " -------------------" << endl;
-    cout << " type  " <<  type << endl ;
-    cout << " FluidVelocity " <<  FluidVelocity  << endl;
-    cout << " delta V  " << FluidVelocity - oldStaggeredVLinear << endl;
-    cout << " Force " << tmpVForce  << endl;
-    cout << " G_Half " << ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius << endl ;
-    cout << " G " <<  G   << endl;
-    cout << " acceler " << ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m ) << endl;
-    cout << " Old Velocity " << oldStaggeredVLinear << endl;
-    cout << " vLinear " << vLinear << endl ;
-    cout << " New Velocity " <<  newStaggeredVLinear << endl;
-    cout << " newDisp " << newVDisp << endl;
-    }
+  //   if ( type == -1 ) {
+  //   cout << " -------------------" << endl;
+  //   cout << " type  " <<  type << endl ;
+  //   cout << " FluidVelocity " <<  FluidVelocity  << endl;
+  //   cout << " delta V  " << FluidVelocity - oldStaggeredVLinear << endl;
+  //   cout << " Force " << tmpVForce  << endl;
+  //   cout << " G_Half " << ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius << endl ;
+  //   cout << " G " <<  G   << endl;
+  //   cout << " acceler " << ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m ) << endl;
+  //   cout << " Old Velocity " << oldStaggeredVLinear << endl;
+  //   cout << " vLinear " << vLinear << endl ;
+  //   cout << " New Velocity " <<  newStaggeredVLinear << endl;
+  //   cout << " newDisp " << newVDisp << endl;
+  //   }
 
-    oldStaggeredVLinear = newStaggeredVLinear;
-    oldVDisp = newVDisp;
-    vDisp += newVDisp;
+  //   oldStaggeredVLinear = newStaggeredVLinear;
+  //   oldVDisp = newVDisp;
+  //   vDisp += newVDisp;
 
-  }
+  // }
   
  
-  state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
-  state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
-  state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] + 0.01 );
-
+  // state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
+  // state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
+  // state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] );
+ 
+  state.setModelReal( CELL_MODEL_REAL_DX, 0.0 );  
+  state.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
+  state.setModelReal( CELL_MODEL_REAL_DZ, 10000 ); // nanotweezer pickup displacement
 }
 #endif
 

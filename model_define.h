@@ -140,7 +140,7 @@ const REAL INIT_CELLS_PER_MICROCARRIER = 4; //10;
 const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = {150.0 * 1.25, 20.0 * 5}; // this is set very high for single cell (or a couple) should be less for many cell simulations to avoid large computational costs  //{ 150.0 * 1.25, 20.0 * 1.25 };
 const REAL NUM_CELLS = 1; //for now only 1 works, since the cells will all be placed at the center
 
-const REAL ADHESION_TYPE = 2; //change the type of adhesion implementation, 1 for tanh based, 2 for piecewise linear
+const S32 ADHESION_TYPE = 2; //change the type of adhesion implementation, 1 for tanh based, 2 for piecewise linear
 const REAL ADHESION_S = 0.01;
 const REAL RANDOM_VIBRATION_SCALE = 0.05;
 

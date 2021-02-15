@@ -75,6 +75,7 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     REAL mag = 0.0;
     REAL stress = 0.0 ;
     REAL xij = D - dist;
+    REAL Fij = 0.0 ;
 
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
         REAL sij = A_AGENT_BOND_S[type0][type1] ;
@@ -85,25 +86,25 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
             }
             else{
                 // compute elastic force
-                switch (ADHESION_IMPLEMENTATION_TYPE) {
+                switch (ADHESION_TYPE) {
                     //original tanh based adhesion force (more info ask Boris Aguilar)
                     case 1:
-                        REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                        Fij += 0.5 * xij * tanh(FABS(xij)*sij);
                         break;
                     // piecewise linear based on dx.doi.org/10.1021/la500045q
                     // bond strenght sij should be 1 for cell-microcarrier bond in above literature
                     case 2: 
                         if ( xij < 1.5 ) { //distance in micron
-                            REAL Fij = sij * xij * 30; //force in nN
+                            Fij += sij * xij * 30; //force in nN
                         }
                         else if ( xij < 5) {
-                            REAL Fij = sij * 45 - 0.3 * (xij - 1.5);
+                            Fij += sij * 45 - 0.3 * (xij - 1.5);
                         }
                         else if ( xij < 13) {
-                            REAL Fij = sij * 43 - 5 * (xij - 5);
+                            Fij += sij * 43 - 5 * (xij - 5);
                         }
                         else if ( xij < 16.5) {
-                            REAL Fij = sij * 3.5 - 0.9 * (xij - 13);
+                            Fij += sij * 3.5 - 0.9 * (xij - 13);
                         }
                         break;
                 }
