@@ -73,10 +73,9 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     REAL dist_threshold = R0 + R1;
     REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[type0] - 0.5*A_AGENT_SHOVING_LIMIT[type1];
     REAL mag = 0.0;
-    REAL stress = 0.0 ; 
-    REAL xij  = D - dist ;
+    REAL stress = 0.0 ;
+    REAL xij = D - dist;
 
-    
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
         REAL sij = A_AGENT_BOND_S[type0][type1] ;
         if(spAgent0.junctionData.isLinked(spAgent1.junctionData) == true) {
@@ -86,7 +85,28 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
             }
             else{
                 // compute elastic force
-                REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                switch (ADHESION_IMPLEMENTATION_TYPE) {
+                    //original tanh based adhesion force (more info ask Boris Aguilar)
+                    case 1:
+                        REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                        break;
+                    // piecewise linear based on dx.doi.org/10.1021/la500045q
+                    // bond strenght sij should be 1 for cell-microcarrier bond in above literature
+                    case 2: 
+                        if ( xij < 1.5 ) { //distance in micron
+                            REAL Fij = sij * xij * 30; //force in nN
+                        }
+                        else if ( xij < 5) {
+                            REAL Fij = sij * 45 - 0.3 * (xij - 1.5);
+                        }
+                        else if ( xij < 13) {
+                            REAL Fij = sij * 43 - 5 * (xij - 5);
+                        }
+                        else if ( xij < 16.5) {
+                            REAL Fij = sij * 3.5 - 0.9 * (xij - 13);
+                        }
+                        break;
+                }
                 mag = mag + Fij ;
                 stress = stress + dist * Fij ;
 
@@ -107,22 +127,22 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
         else {/* no junction */
             if( dist < A_AGENT_BOND_CREATE_FACTOR[type0][type1]*dist_threshold ) {
 
-               link = true;/* form junction */
+                link = true;/* form junction */
 
-               if ( type0 == type1 ) {
+                if ( type0 == type1 ) {
                   end0.setType( JUNCTION_END_TYPE_CELL );
                   end1.setType( JUNCTION_END_TYPE_CELL );
-               } else {
+                } else {
                   end0.setType( JUNCTION_END_TYPE_MICROCARRIER );
                   end1.setType( JUNCTION_END_TYPE_MICROCARRIER );
-               }
+                }
 
-               // add force rigth away
-               REAL D = R0 + R1;
-               REAL xij  = D - dist  ;
-               REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
-               mag = mag + Fij ;
-               stress = stress + dist * Fij;
+                // add force rigth away
+                REAL D = R0 + R1;
+                REAL xij  = D - dist  ;
+                
+                mag = mag + Fij ;
+                stress = stress + dist * Fij;
             }
         }
         

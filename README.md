@@ -11,6 +11,9 @@ To run this model a working installation of Biocellion v3.1 is needed.
 
 - Download Biocellion 3.1 (Biocellion 3.1 is currently not available yet)
 - Install CGAL: https://doc.cgal.org/latest/Manual/usage.html
+- Download this repository into the $BIOCELLION_USER directory as in the Biocellion 3.1 instructions
+- Read chapter 6 of the Biocellion 3.1 instructions to build and excecute the model
+- Create a directory called "output" before running the model
 
 ## Contributing
 

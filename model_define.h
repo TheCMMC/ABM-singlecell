@@ -85,6 +85,9 @@ typedef enum _particle_extra_output_real_e {
         PARTICLE_EXTRA_OUTPUT_REAL_VX,
         PARTICLE_EXTRA_OUTPUT_REAL_VY,
         PARTICLE_EXTRA_OUTPUT_REAL_VZ,
+        PARTICLE_EXTRA_OUTPUT_REAL_FX,
+        PARTICLE_EXTRA_OUTPUT_REAL_FY,
+        PARTICLE_EXTRA_OUTPUT_REAL_FZ,
 	NUM_PARTICLE_EXTRA_OUTPUT_REALS
 } particle_extra_output_real_e;
 
@@ -137,7 +140,7 @@ const REAL INIT_CELLS_PER_MICROCARRIER = 4; //10;
 const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = {150.0 * 1.25, 20.0 * 5}; // this is set very high for single cell (or a couple) should be less for many cell simulations to avoid large computational costs  //{ 150.0 * 1.25, 20.0 * 1.25 };
 const REAL NUM_CELLS = 1; //for now only 1 works, since the cells will all be placed at the center
 
-
+const REAL ADHESION_TYPE = 2; //change the type of adhesion implementation, 1 for tanh based, 2 for piecewise linear
 const REAL ADHESION_S = 0.01;
 const REAL RANDOM_VIBRATION_SCALE = 0.05;
 

@@ -58,6 +58,9 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
       state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_FX, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_FY, 0.0 );
+      state_c.setModelReal( CELL_MODEL_REAL_FZ, 0.0 );
       state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
       state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
