@@ -13,7 +13,7 @@
 <!-- domain, parameters describing the simulation domain
 x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) should be equl to or larger than 4 (minimum parition size), positive integer multiple of refine_ratio^(interface grid level in AMR), and equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size), required, integer, [4,)
 -->
-<domain x="32" y="32" z="32"/>
+<domain x="4" y="4" z="32"/>
 
 <!-- init_data, parameters related to initial agent and grid data, required
 	partition_size: partition size, partition_size should be equl to or larger than 4 (minimum parition size), positive integer multiple of refine_ratio^(interface grid level in AMR), and equal to or larger than refine_ratio^(interface grid level in AMR) * 2 (minimum box size), required, integer, [4,)
@@ -30,7 +30,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	start_x(, y, or z): output box offset in the x(, y, or z) direction, must be an integer multiple of refine_ratio^(number of AMR levels - 1), required, integer, [1,)
 	size_x(, y, or z): output box size in the x(, y, or z) direction, must be an integer multiple of refine_ratio^(number of AMR levels - 1), required, integer, [1,)
 -->
-<output path="./output" particle="pvtp" grid="vthb" start_x="0" start_y="0" start_z="0" size_x="32" size_y="32" size_z="32"/>
+<output path="./output" particle="pvtp" grid="vthb" start_x="0" start_y="0" start_z="0" size_x="4" size_y="4" size_z="32"/>
 
 </required>
 
@@ -48,7 +48,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	verbosity: controls the verbosity of standard output messages (5 for the highest level of verbosity), optional, default=1, [0,5]
 	time_stamp: if set to yes, a time stamp is inserted right before every output message, optional, default=no, yes|no
 -->
-<stdout path="" verbosity="3" time_stamp="yes"/>
+<stdout path="" verbosity="0" time_stamp="yes"/>
 
 <!-- system, parameters related to shared and distributed memory parallelism, optional
 	num_threads: number of threads per MPI process, optional, integer, default=# cores (or hardware threads) in a node, [1,)
@@ -56,7 +56,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	num_nodes_per_group: number of nodes per node group, optional, default=# MPI processes, [1,)
 	num_sockets_per_node: number of NUMA sockets per node, this information is used for NUMA binding, set to 1 to turn-off NUMA binding, num_node_groups * num_nodes_per_group * num_sockets_per_node should coincide with # MPI processes, optional, default=1, [1,)
 -->
-<system num_node_groups="1" num_nodes_per_group="1" num_sockets_per_node="1" num_threads="12"/>
+<system num_node_groups="1" num_nodes_per_group="1" num_sockets_per_node="1" num_threads="7"/>
 
 <!-- super_partition, sets super partition size
 	x(, y, or z): super partition size in the direction of x(, y, or z), a larger value reduces the communication requirement between node groups at the expense of lower parallelism, this number should be an integer multiple of partition_size, optional, default=the smallest integer multiple of partition_size that is equal to or larger than x(, y, or z) (of domain), integer, [1,)
@@ -70,7 +70,7 @@ x(, y, or z): simulation grid size in the x(, y, or z) direction, x(, y, or z) s
 	regridding: regridding interval (unit: baseline time steps), regridding should be equal to or smaller than load_balance and regridding should equally divide load_balance, optional, integer, default=100, [1,)
 	checkpoint: checkpoint interval (0: turn off, unit: baseline time steps), optional, default=0, integer, [0,)
 -->
-<interval output="100" summary="1" load_balance="1000000" regridding="1000000" checkpoint="1000000"/>
+<interval output="100" summary="10" load_balance="1000000" regridding="1000000" checkpoint="1000000"/>
 
 <!-- amr, controls adaptive mesh refinement
 	refine_ratio: adaptive mesh refinement ratio between two consecutive levels, optional, default=2, 2|4|8

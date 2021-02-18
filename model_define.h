@@ -32,8 +32,8 @@ inline REAL MonodEquation(  REAL Kc , REAL u ) {
 
 /* MODEL START */
 const S32 SYSTEM_DIMENSION = 3;
-const REAL IF_GRID_SPACING = 1750.0;
-const REAL EPSILON = 1e-20;
+const REAL IF_GRID_SPACING = 1750.0; // size of grid cell in um
+const REAL EPSILON = 1e-20; //relative error for ODE solving
 
 typedef enum _model_rng_type_e {
 	MODEL_RNG_UNIFORM,
@@ -138,7 +138,7 @@ const REAL DENSITY_MEDIUM = 1.0e-18   ;// Kg / um^3
 const REAL A_MCARRIER_DENSITY_PER_UB =  1 / (32.0 *32.0 * 32.0 ) ;  // 2000 //0.02 ; // 0.1
 const REAL INIT_CELLS_PER_MICROCARRIER = 4; //10;
 const REAL A_CELL_D_MAX[ NUM_AGENT_TYPES ] = {150.0 * 1.25, 20.0 * 5}; // this is set very high for single cell (or a couple) should be less for many cell simulations to avoid large computational costs  //{ 150.0 * 1.25, 20.0 * 1.25 };
-const REAL NUM_CELLS = 1; //for now only 1 works, since the cells will all be placed at the center
+const REAL NUM_CELLS = 10; //for now only 1 works, since the cells will all be placed at the center
 
 const S32 ADHESION_TYPE = 2; //change the type of adhesion implementation, 1 for tanh based, 2 for piecewise linear
 const REAL ADHESION_S = 0.01;
@@ -147,7 +147,7 @@ const REAL RANDOM_VIBRATION_SCALE = 0.05;
 const S32 MECH_INTRCT_ELLIPSOID_MAX_ITERS = 100;
 const REAL MECH_INTRCT_ELLIPSOID_EPSILON = 1e-10;
 
-const REAL BASELINE_TIME_STEP_DURATION = 0.00001  ; //0.0001; //  seconds
+const REAL BASELINE_TIME_STEP_DURATION = 0.00001  ; //0.0001; //  10^-5 seconds duration of one baseline time step
 const REAL STEP_TIME = 1.0 ;
 const REAL NUM_STATE_AND_GRID_TIME_STEPS_PER_BASELINE = 1 ;
 
@@ -159,6 +159,9 @@ const REAL STRESS_TRESHOLD = 1e-7 ; //1e-7 ; //
 // Bioreactor Geometry
 const REAL BIO_RADIUS = 55000 * 0.5; // micrometers
 const REAL BIO_HEIGHT = 42895; // micrometers
+
+// nanotweezer settings
+const REAL PICK_UP_SPEED = 0.5; // speed with which the nanotweezer picks up the cell in um/s
 
 // Boundary forces 
 // U =  eps_B * exp( delta / sigma_B )  for delta >0 ; 0 othersie

@@ -26,48 +26,75 @@ using namespace std;
 
 #if HAS_SPAGENT
 
-
-static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity, SpAgentState& state, /* INOUT */ VReal& vDisp ) ;
+// static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity, SpAgentState& state, /* INOUT */ VReal& vDisp ) ;
 
 
 void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VIdx& regionVSize, const IfGridBoxData<BOOL>& ifGridHabitableBoxData, Vector<VIdx>& v_spAgentVIdx, Vector<SpAgentState>& v_spAgentState, Vector<VReal>& v_spAgentVOffset ) {/* initialization */
 	/* MODEL START */
 
-        REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
-        REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ; 
+        // REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
+        // REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ; 
 
 	if( init == true ) {
 		const S64 numUBs = regionVSize[0] * regionVSize[1] * regionVSize[2];
-    for (S64 j = 0 ; j < NUM_CELLS ; j++ ) {
-      VReal vPos_c = VReal::ZERO ;
-      VIdx vIdx_c;
-      VReal vOffset_c;
-      SpAgentState state_c;
-      REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ];
 
-      vIdx_c[0] = (S64) ( regionVSize[0] / (S64) (2)) ;
-      vIdx_c[1] = (S64) ( regionVSize[1] / (S64) (2)) ;
-      vIdx_c[2] = 0 ;
-       
-      state_c.setType( AGENT_CELL_A );
-      state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
-      REAL biomass = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
-      state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass );
-      state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
-      state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
-      state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
+    //add a cell at the origin
 
-      state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass );
+    VReal vPos_c = VReal::ZERO ;
+    VIdx vIdx_c;
+    VReal vOffset_c;
+    SpAgentState state_c;
+    REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ];
 
-      state_c.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );
+    vIdx_c[0] = (S64) ( regionVSize[0] / (S64) (2)) ;
+    vIdx_c[1] = (S64) ( regionVSize[1] / (S64) (2)) ;
+    vIdx_c[2] = 0 ;
+      
+    state_c.setType( AGENT_CELL_A );
+    state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
+    REAL biomass_c = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
+    state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass_c );
+    state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
+    state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
+    state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
+    state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
+    state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0);
+    state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
-      v_spAgentVIdx.push_back( vIdx_c );
-      v_spAgentState.push_back( state_c );
-      v_spAgentVOffset.push_back( vOffset_c );
-    }
+    state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass_c );
+
+    state_c.setMechIntrctBdrySphere( A_CELL_D_MAX[ AGENT_CELL_A ] );
+
+    v_spAgentVIdx.push_back( vIdx_c );
+    v_spAgentState.push_back( state_c );
+    v_spAgentVOffset.push_back( vOffset_c );
+
+    // initiate a microcarrier
+    VReal vPos_mc = VReal::ZERO;
+    VIdx vIdx_mc;
+    VReal vOffset_mc;
+    SpAgentState state_mc;
+
+    // put microcarrier at bottom of the cell
+    REAL rho = A_CELL_RADIUS[AGENT_MCARRIER] + cellrad ;
+    vPos_mc[2] = vPos_c[2] - rho ;
+
+    state_mc.setType( AGENT_MCARRIER );
+    state_mc.setModelReal( CELL_MODEL_REAL_RADIUS, A_CELL_RADIUS[AGENT_MCARRIER] );
+    REAL biomass_mc = volume_agent(A_CELL_RADIUS[AGENT_MCARRIER] ) * A_DENSITY_BIOMASS[ AGENT_MCARRIER ] ;
+    state_mc.setModelReal( CELL_MODEL_REAL_MASS, biomass_mc );
+    state_mc.setModelReal( CELL_MODEL_REAL_EPS,  0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT,  0.0 ) ;
+    state_mc.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
+
+    state_mc.setMechIntrctBdrySphere( A_CELL_D_MAX[AGENT_MCARRIER] );
+
+    v_spAgentVIdx.push_back( vIdx_mc );
+    v_spAgentState.push_back( state_mc );
+    v_spAgentVOffset.push_back( vOffset_mc );
   }
   
 
@@ -182,7 +209,8 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
 
   VReal vForce ;
   VReal vDragForce ; 
-  VReal vFluidV ; 
+  VReal vFluidV = VReal::ZERO ; 
+  VReal vPickUpV = VReal::ZERO ; //to simulate nanotweezer pickup
   VReal vPos =  VReal::ZERO ; 
   
   REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
@@ -190,53 +218,61 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   REAL xo = REAL ( Info::getDomainSize(0) * IF_GRID_SPACING ) * 0.5 ;
   REAL yo = REAL ( Info::getDomainSize(1) * IF_GRID_SPACING ) * 0.5 ;
   
-  REAL Fmag = 0.0 ; 
+  // REAL Fmag = 0.0 ; 
   
-  // retrieve velocities from cfd data based on agent location:
   const int GRID_SIZE = IF_GRID_SPACING;
+  //define locations
   double x =  GRID_SIZE * vIdx[0] +  GRID_SIZE*0.5   +  vOffset[0];
   double y =  GRID_SIZE * vIdx[1] +  GRID_SIZE*0.5   +  vOffset[1];
   double z =  GRID_SIZE * vIdx[2] +  GRID_SIZE*0.5   +  vOffset[2];
-  double u=0, v=0, w=0;
 
-  cfd_query( (x - xo)*1e-6, (y - yo)*1e-6, z*1e-6, &u, &v, &w); // velocity units m/s
+  // retrieve velocities from cfd data based on agent location:
+  // double u=0, v=0, w=0;
+  // cfd_query( (x - xo)*1e-6, (y - yo)*1e-6, z*1e-6, &u, &v, &w); // velocity units m/s
   
-  // velocity of fluid in um/s
-  vFluidV[0] = u*1e6 * VELOCITY_DAMPING_TEST ;
-  vFluidV[1] = v*1e6 * VELOCITY_DAMPING_TEST ;
-  vFluidV[2] = w*1e6 * VELOCITY_DAMPING_TEST ;
-
-    
+  // // velocity of fluid in um/s 
+  // vFluidV[0] = u*1e6 * VELOCITY_DAMPING_TEST ;
+  // vFluidV[1] = v*1e6 * VELOCITY_DAMPING_TEST ;
+  // vFluidV[2] = w*1e6 * VELOCITY_DAMPING_TEST ;
+  
+  
   vForce[0] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_X );
   vForce[1] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Y );
   vForce[2] = mechIntrctData.getModelReal( CELL_MECH_REAL_FORCE_Z );
   REAL stress = mechIntrctData.getModelReal( CELL_MECH_REAL_STRESS  );    
   //S32 type = state.getType();    
 
-  // // Compute force with cylindrical boundary  
-  REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
-  REAL delta =  dist + radius - BIO_RADIUS ;
-  // if ( delta  > 0.0 ) { 
-  //   Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
-  //   vForce[0] += Fmag * (x - xo) / dist ;
-  //   vForce[1] += Fmag * (y - yo) / dist ;
-  // }
+  // set nanotweezer pickup speed in um/s
+  vPickUpV[2] = PICK_UP_SPEED ;
 
-  // compute forces with bottom and ceiling
-  if ( z + radius - BIO_HEIGHT ) { 
-    delta = z + radius - BIO_HEIGHT; 
-    vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
-  }
-  // else if ( radius - z ) {
-  //   delta = radius ;
+  // // // Compute force with cylindrical boundary  
+  // REAL dist = SQRT( (x - xo)*(x-xo) + (y-yo)*(y-yo) );
+  // REAL delta =  dist + radius - BIO_RADIUS ;
+  // // if ( delta  > 0.0 ) { 
+  // //   Fmag =  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY ) ; 
+  // //   vForce[0] += Fmag * (x - xo) / dist ;
+  // //   vForce[1] += Fmag * (y - yo) / dist ;
+  // // }
+
+  // // compute forces with bottom and ceiling
+  // if ( z + radius - BIO_HEIGHT ) { 
+  //   delta = z + radius - BIO_HEIGHT; 
   //   vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
   // }
+  // // else if ( radius - z ) {
+  // //   delta = radius ;
+  // //   vForce[2] +=  -( EPS_BOUNDARY / SIG_BOUNDARY ) * EXP( delta / SIG_BOUNDARY );
+  // // }
    
   // Gravity and Buoyancy force
-  vForce[2] += state.getModelReal(CELL_MODEL_REAL_MASS)*STANDARD_GRAVITY *(DENSITY_MEDIUM/A_DENSITY_BIOMASS[type] - 1.0);    
-      
-  computeAgentTranslation( vForce, vPos, junctionData, mechIntrctData,  vFluidV,  state /* INOUT */,vDisp ) ;
+  // vForce[2] += state.getModelReal(CELL_MODEL_REAL_MASS)*STANDARD_GRAVITY *(DENSITY_MEDIUM/A_DENSITY_BIOMASS[type] - 1.0);    
+ 
+  // computeAgentTranslation( vForce, vPos, junctionData, mechIntrctData,  vFluidV,  state /* INOUT */,vDisp ) ;
 
+  //update cell velocities with nanotweezer pickup speed only
+  if (type = AGENT_CELL_A){
+    vDisp = vPickUpV * BASELINE_TIME_STEP_DURATION ;  // displacement
+  }
 
   // Random movement (Brownian)
   //if ( A_DIFFUSION_COEFF_CELLS[type] > 0.0 ){
@@ -256,7 +292,10 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   stress =  ( 0.5 / 3.0 )  * stress / CellVol;
 
   state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // update stress
-    
+  state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
+  state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
+  state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
+ 
 
   /* MODEL END */
 
@@ -302,7 +341,7 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
        mother_biomas = MotherVol*A_DENSITY_BIOMASS[type] - mother_inert;
     }
 
-    radius = radius_from_volume( MotherVol );
+    radius = radius_from_volume( MotherVol ); 
 
     //  set the model variable
     motherState.setModelReal( CELL_MODEL_REAL_RADIUS, radius );
@@ -382,86 +421,83 @@ void ModelRoutine::divideSpAgent( const VIdx& vIdx, const JunctionData& junction
 }
 
 
-// Verlet/leapfrog algorithm for agents translation
-static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity,  SpAgentState& state, /* INOUT */ VReal& vDisp ) {
+// // Verlet/leapfrog algorithm for agents translation
+// static void computeAgentTranslation( const VReal& vForce, const VReal& vPos, const JunctionData& junctionData, const MechIntrctData& mechIntrctData, const VReal& FluidVelocity,  SpAgentState& state, /* INOUT */ VReal& vDisp ) {
 
-  // REAL m = state.getModelReal( CELL_MODEL_REAL_MASS );
-  // S32 type = state.getType() ;
-  // REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
+//   REAL m = state.getModelReal( CELL_MODEL_REAL_MASS );
+//   S32 type = state.getType() ;
+//   REAL radius  = state.getModelReal( CELL_MODEL_REAL_RADIUS ); 
     
-  // VReal oldStaggeredVLinear;
-  // VReal newStaggeredVLinear;
-  // VReal vLinear;
-  // VReal oldVDisp;
-  // VReal newVDisp;
-  // VReal tmpVForce = vForce ;
+//   VReal oldStaggeredVLinear;
+//   VReal newStaggeredVLinear;
+//   VReal vLinear;
+//   VReal oldVDisp;
+//   VReal newVDisp;
+//   VReal tmpVForce = vForce ;
+//   VReal totVForce ;
 
 
-  // if ( Info::getCurBaselineTimeStep() > 0 ) {
-  //   oldStaggeredVLinear[0] = state.getModelReal( CELL_MODEL_REAL_DX ) ; // um/s
-  //   oldStaggeredVLinear[1] = state.getModelReal( CELL_MODEL_REAL_DY ) ; // um/s
-  //   oldStaggeredVLinear[2] = state.getModelReal( CELL_MODEL_REAL_DZ ) ; // um/s
-  // }
-  // else {
+//   if ( Info::getCurBaselineTimeStep() > 0 ) {
+//     oldStaggeredVLinear[0] = state.getModelReal( CELL_MODEL_REAL_DX ) ; // um/s
+//     oldStaggeredVLinear[1] = state.getModelReal( CELL_MODEL_REAL_DY ) ; // um/s
+//     oldStaggeredVLinear[2] = state.getModelReal( CELL_MODEL_REAL_DZ ) ; // um/s
+//   }
+//   else {
     
-  //   oldStaggeredVLinear = FluidVelocity  -  ( vForce ) * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 ) ;
-  //   //oldStaggeredVLinear = VReal::ZERO;
-  //   //cout << " m " << m;
-  //   //cout << " Fluid " << FluidVelocity;
-  //   //cout << " vForce " << vForce ;
-  //   //cout << " timestep  " << AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION  ;
-  //   //cout << " innertia " <<  AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 )  ;
-  //   //cout << endl ;
+//     oldStaggeredVLinear = FluidVelocity  -  ( vForce ) * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 ) ;
+//     //oldStaggeredVLinear = VReal::ZERO;
+//     //cout << " m " << m;
+//     //cout << " Fluid " << FluidVelocity;
+//     //cout << " vForce " << vForce ;
+//     //cout << " timestep  " << AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION  ;
+//     //cout << " innertia " <<  AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / ( m * 2.0 )  ;
+//     //cout << endl ;
      
-  // }
+//   }
 
-  // vDisp = VReal::ZERO;
-  // oldVDisp = oldStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+//   vDisp = VReal::ZERO;
+//   oldVDisp = oldStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
 
-  // for( S32 i = 0 ; i < AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP ; i++ ) { 
+//   for( S32 i = 0 ; i < AGENT_TRANSLATION_ROTATION_INTEGRATION_STEPS_PER_BASELINE_TIME_STEP ; i++ ) { 
 
-  //   VReal G = ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; // drag force
-  //   newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_{n-1/2}) * (deltaT/m), G: damping */
+//     VReal G = ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; // drag force
+//     newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_{n-1/2}) * (deltaT/m), G: damping */
   
-  //   newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+//     newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
-  //   vLinear = ( newVDisp + oldVDisp ) / ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION * 2.0 );/* v_n = (pos_{n+1} - pos_{n-1}) / (deltaT * 2.0) */
+//     vLinear = ( newVDisp + oldVDisp ) / ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION * 2.0 );/* v_n = (pos_{n+1} - pos_{n-1}) / (deltaT * 2.0) */
 
-  //   G =    ( FluidVelocity - vLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; 
-  //   newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_n) * (deltaT/m) */
+//     G =    ( FluidVelocity - vLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius  ; 
+//     newStaggeredVLinear = oldStaggeredVLinear + ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m );/* v_{n+1/2} = v_{n-1/2} + ( F_n - G_n) * (deltaT/m) */
 
-  //   newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
+//     newVDisp = newStaggeredVLinear * AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION;/* v_{n+1/2} * deltaT */
 
-  //   if ( type == -1 ) {
-  //   cout << " -------------------" << endl;
-  //   cout << " type  " <<  type << endl ;
-  //   cout << " FluidVelocity " <<  FluidVelocity  << endl;
-  //   cout << " delta V  " << FluidVelocity - oldStaggeredVLinear << endl;
-  //   cout << " Force " << tmpVForce  << endl;
-  //   cout << " G_Half " << ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius << endl ;
-  //   cout << " G " <<  G   << endl;
-  //   cout << " acceler " << ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m ) << endl;
-  //   cout << " Old Velocity " << oldStaggeredVLinear << endl;
-  //   cout << " vLinear " << vLinear << endl ;
-  //   cout << " New Velocity " <<  newStaggeredVLinear << endl;
-  //   cout << " newDisp " << newVDisp << endl;
-  //   }
+//     if ( type == -1 ) {
+//     cout << " -------------------" << endl;
+//     cout << " type  " <<  type << endl ;
+//     cout << " FluidVelocity " <<  FluidVelocity  << endl;
+//     cout << " delta V  " << FluidVelocity - oldStaggeredVLinear << endl;
+//     cout << " Force " << tmpVForce  << endl;
+//     cout << " G_Half " << ( FluidVelocity - oldStaggeredVLinear ) * DYNAMIC_VISCOSITY * 6.0 * MY_PI * radius << endl ;
+//     cout << " G " <<  G   << endl;
+//     cout << " acceler " << ( tmpVForce + G ) * ( AGENT_TRANSLATION_ROTATION_PSEUDO_TIME_STEP_DURATION / m ) << endl;
+//     cout << " Old Velocity " << oldStaggeredVLinear << endl;
+//     cout << " vLinear " << vLinear << endl ;
+//     cout << " New Velocity " <<  newStaggeredVLinear << endl;
+//     cout << " newDisp " << newVDisp << endl;
+//     }
 
-  //   oldStaggeredVLinear = newStaggeredVLinear;
-  //   oldVDisp = newVDisp;
-  //   vDisp += newVDisp;
-
-  // }
+//     oldStaggeredVLinear = newStaggeredVLinear;
+//     oldVDisp = newVDisp;
+//     vDisp += newVDisp;
+//     totVForce = G + tmpVForce ;
+//   }
   
+//   state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
+//   state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
+//   state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] );
  
-  // state.setModelReal( CELL_MODEL_REAL_DX, newStaggeredVLinear[0] );  // displacement
-  // state.setModelReal( CELL_MODEL_REAL_DY, newStaggeredVLinear[1] );
-  // state.setModelReal( CELL_MODEL_REAL_DZ, newStaggeredVLinear[2] );
- 
-  state.setModelReal( CELL_MODEL_REAL_DX, 0.0 );  
-  state.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
-  state.setModelReal( CELL_MODEL_REAL_DZ, 10000 ); // nanotweezer pickup displacement
-}
+// }
 #endif
 
