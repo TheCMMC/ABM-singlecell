@@ -40,25 +40,34 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
 
     //add a cell at the origin
 
-    VReal vPos_c = VReal::ZERO ;
     VIdx vIdx_c;
     VReal vOffset_c;
     SpAgentState state_c;
-    REAL cellrad = A_CELL_RADIUS[ AGENT_CELL_A ];
+    REAL cell_rad = A_CELL_RADIUS[ AGENT_CELL_A ];
 
-    vIdx_c[0] = (S64) ( regionVSize[0] / (S64) (2)) ;
-    vIdx_c[1] = (S64) ( regionVSize[1] / (S64) (2)) ;
-    vIdx_c[2] = 0 ;
-      
+    // vIdx_c[0] = (S64) ( regionVSize[0] / (S64) (2)) ;
+    // vIdx_c[1] = (S64) ( regionVSize[1] / (S64) (2)) ;
+    // vIdx_c[2] = 0 ;
+
+    // place cell with its bottom at the origin
+    for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ ){
+        vIdx_c[dim] = 0 ;
+        vOffset_c[dim] = 0 ;
+    } 
+    vOffset_c[2] = cell_rad ;
+
     state_c.setType( AGENT_CELL_A );
-    state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cellrad );
-    REAL biomass_c = volume_agent( cellrad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
+    state_c.setModelReal( CELL_MODEL_REAL_RADIUS, cell_rad );
+    REAL biomass_c = volume_agent( cell_rad )*A_DENSITY_BIOMASS[ AGENT_CELL_A ] ;
     state_c.setModelReal( CELL_MODEL_REAL_MASS, biomass_c );
     state_c.setModelReal( CELL_MODEL_REAL_EPS, 0.0 );
     state_c.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT, 1.0 ) ;
     state_c.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
     state_c.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
-    state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0);
+    state_c.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );    
+    state_c.setModelReal( CELL_MODEL_REAL_FX, 0.0 );
+    state_c.setModelReal( CELL_MODEL_REAL_FY, 0.0 );
+    state_c.setModelReal( CELL_MODEL_REAL_FZ, 0.0 );
     state_c.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
     state_c.setODEVal(0, ODE_NET_VAR_GROWING_CELL_BIOMASS, biomass_c );
@@ -70,24 +79,30 @@ void ModelRoutine::addSpAgents( const BOOL init, const VIdx& startVIdx, const VI
     v_spAgentVOffset.push_back( vOffset_c );
 
     // initiate a microcarrier
-    VReal vPos_mc = VReal::ZERO;
     VIdx vIdx_mc;
     VReal vOffset_mc;
     SpAgentState state_mc;
+    REAL mc_rad = A_CELL_RADIUS[ AGENT_MCARRIER ];
 
     // put microcarrier at bottom of the cell
-    REAL rho = A_CELL_RADIUS[AGENT_MCARRIER] + cellrad ;
-    vPos_mc[2] = vPos_c[2] - rho ;
+    for( S32 dim = 0 ; dim < SYSTEM_DIMENSION ; dim++ ){
+        vIdx_mc[dim] = 0 ;
+        vOffset_mc[dim] = 0 ;
+    } 
+    vOffset_mc[2] = -mc_rad ;
 
     state_mc.setType( AGENT_MCARRIER );
-    state_mc.setModelReal( CELL_MODEL_REAL_RADIUS, A_CELL_RADIUS[AGENT_MCARRIER] );
-    REAL biomass_mc = volume_agent(A_CELL_RADIUS[AGENT_MCARRIER] ) * A_DENSITY_BIOMASS[ AGENT_MCARRIER ] ;
+    state_mc.setModelReal( CELL_MODEL_REAL_RADIUS, mc_rad );
+    REAL biomass_mc = volume_agent(mc_rad ) * A_DENSITY_BIOMASS[ AGENT_MCARRIER ] ;
     state_mc.setModelReal( CELL_MODEL_REAL_MASS, biomass_mc );
     state_mc.setModelReal( CELL_MODEL_REAL_EPS,  0.0 );
     state_mc.setModelReal( CELL_MODEL_REAL_UPTAKE_PCT,  0.0 ) ;
     state_mc.setModelReal( CELL_MODEL_REAL_DX, 0.0 );
     state_mc.setModelReal( CELL_MODEL_REAL_DY, 0.0 );
     state_mc.setModelReal( CELL_MODEL_REAL_DZ, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_FX, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_FY, 0.0 );
+    state_mc.setModelReal( CELL_MODEL_REAL_FZ, 0.0 );
     state_mc.setModelReal( CELL_MODEL_REAL_STRESS, 0.0 );
 
     state_mc.setMechIntrctBdrySphere( A_CELL_D_MAX[AGENT_MCARRIER] );
@@ -270,7 +285,7 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   // computeAgentTranslation( vForce, vPos, junctionData, mechIntrctData,  vFluidV,  state /* INOUT */,vDisp ) ;
 
   //update cell velocities with nanotweezer pickup speed only
-  if (type = AGENT_CELL_A){
+  if (type == AGENT_CELL_A){
     vDisp = vPickUpV * BASELINE_TIME_STEP_DURATION ;  // displacement
   }
 
@@ -291,11 +306,14 @@ void ModelRoutine::adjustSpAgent( const VIdx& vIdx, const JunctionData& junction
   REAL CellVol = volume_agent( radius );
   stress =  ( 0.5 / 3.0 )  * stress / CellVol;
 
-  state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // update stress
-  state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
-  state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
-  state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
- 
+state.setModelReal( CELL_MODEL_REAL_STRESS, stress );  // update stress
+state.setModelReal( CELL_MODEL_REAL_DX, vDisp[0] );  // displacement
+state.setModelReal( CELL_MODEL_REAL_DY, vDisp[1] );
+state.setModelReal( CELL_MODEL_REAL_DZ, vDisp[2] );
+state.setModelReal( CELL_MODEL_REAL_FX, vForce[0] );  // force
+state.setModelReal( CELL_MODEL_REAL_FY, vForce[1] );
+state.setModelReal( CELL_MODEL_REAL_FZ, vForce[2] );
+
 
   /* MODEL END */
 

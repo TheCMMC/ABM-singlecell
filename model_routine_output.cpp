@@ -49,9 +49,9 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
    v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VX ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DX ) / BASELINE_TIME_STEP_DURATION ;
    v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VY ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DY ) / BASELINE_TIME_STEP_DURATION ;
    v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VZ ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DZ ) / BASELINE_TIME_STEP_DURATION ;
-   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FX ] = spAgent.state.getModelReal( CELL_MECH_REAL_FORCE_X ) ;
-   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FY ] = spAgent.state.getModelReal( CELL_MECH_REAL_FORCE_Y ) ;
-   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FZ ] = spAgent.state.getModelReal( CELL_MECH_REAL_FORCE_Z ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FX ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FX ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FY ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FY ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FZ ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FZ ) ;
 
 
 	/* MODEL END */

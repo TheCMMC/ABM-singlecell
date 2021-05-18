@@ -30,7 +30,7 @@ void ModelRoutine::initJunctionSpAgent( const VIdx& vIdx0, const SpAgent& spAgen
 
     S32 type0 = spAgent0.state.getType();
     S32 type1 = spAgent1.state.getType();
-    REAL factor = 1.1;
+    REAL factor = 2;
 
     REAL R0 = spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
     REAL R1 = spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS );
@@ -73,13 +73,15 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
 
     REAL R0 = A_AGENT_SHOVING_SCALE[type0]*spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
     REAL R1 = A_AGENT_SHOVING_SCALE[type1]*spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
-    REAL dist_threshold = R0 + R1;
+    REAL dist_threshold = (R0 + R1) * 2;
     REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[type0] - 0.5*A_AGENT_SHOVING_LIMIT[type1];
     REAL mag = 0.0;
     REAL stress = 0.0 ;
     REAL xij = D - dist;
     REAL Fij = 0.0 ;
     REAL sij = A_AGENT_BOND_S[type0][type1] ;
+
+    
 
 
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
