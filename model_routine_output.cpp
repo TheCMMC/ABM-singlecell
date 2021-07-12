@@ -26,29 +26,32 @@ void ModelRoutine::updateSpAgentOutput( const VIdx& vIdx, const SpAgent& spAgent
 
 	color = spAgent.state.getType();
 	CHECK( v_extraReal.size() == NUM_PARTICLE_EXTRA_OUTPUT_REALS );
-        REAL radius = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS );   
+   REAL radius = spAgent.state.getModelReal( CELL_MODEL_REAL_RADIUS );   
 	v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = radius;
 
-        // print the Pressure
-        //REAL CellVol = volume_agent( radius );
-        REAL stress = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS );
+   // print the Pressure
+   //REAL CellVol = volume_agent( radius );
+   REAL stress = spAgent.state.getModelReal( CELL_MODEL_REAL_STRESS );
 
-        // print the id of supporting microcarrier, -1 for microcarroers and -1 detached cells
-        S64 microID = -1 ;
-        if ( spAgent.state.getType() == AGENT_CELL_A ) { 
-           for ( S32 i = 0 ; i <  spAgent.junctionData.getNumJunctions(); i++ ) {
-              JunctionEnd end = spAgent.junctionData.getJunctionEndRef(i);
-              if ( end.getType() == JUNCTION_END_TYPE_MICROCARRIER  ) {
-                 microID = spAgent.junctionData.getOtherEndId( i ) ;
-              }
-           }
-        }
-        v_extraReal[ PARTICEL_EXTRA_OUTPUT_REAL_MicroID ] = REAL( microID ) ;
-        v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] =  stress;
-        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_ID] = REAL( spAgent.junctionData.getCurId() )  ;
-        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VX] = spAgent.state.getModelReal( CELL_MODEL_REAL_DX ) / BASELINE_TIME_STEP_DURATION ;
-        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VY] = spAgent.state.getModelReal( CELL_MODEL_REAL_DY ) / BASELINE_TIME_STEP_DURATION ;
-        v_extraReal[PARTICLE_EXTRA_OUTPUT_REAL_VZ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DZ ) / BASELINE_TIME_STEP_DURATION ;
+   // print the id of supporting microcarrier, -1 for microcarroers and -1 detached cells
+   S64 microID = -1 ;
+   if ( spAgent.state.getType() == AGENT_CELL_A ) { 
+      for ( S32 i = 0 ; i <  spAgent.junctionData.getNumJunctions(); i++ ) {
+         JunctionEnd end = spAgent.junctionData.getJunctionEndRef(i);
+         if ( end.getType() == JUNCTION_END_TYPE_MICROCARRIER  ) {
+            microID = spAgent.junctionData.getOtherEndId( i ) ;
+         }
+      }
+   }
+   v_extraReal[ PARTICEL_EXTRA_OUTPUT_REAL_MicroID ] = REAL( microID ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_STRESS ] =  stress;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_ID ] = REAL( spAgent.junctionData.getCurId() )  ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VX ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DX ) / BASELINE_TIME_STEP_DURATION ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VY ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DY ) / BASELINE_TIME_STEP_DURATION ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_VZ ] = spAgent.state.getModelReal( CELL_MODEL_REAL_DZ ) / BASELINE_TIME_STEP_DURATION ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FX ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FX ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FY ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FY ) ;
+   v_extraReal[ PARTICLE_EXTRA_OUTPUT_REAL_FZ ] = spAgent.state.getModelReal( CELL_MODEL_REAL_FZ ) ;
 
 
 	/* MODEL END */

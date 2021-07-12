@@ -21,13 +21,16 @@ NOTICE:  These data were produced by Battelle Memorial Institute (BATTELLE) unde
 using namespace std;
 
 #if HAS_SPAGENT
+
+static REAL addAdhesionForce( REAL& Fij, const REAL& xij, const REAL& sij);
+
 void ModelRoutine::initJunctionSpAgent( const VIdx& vIdx0, const SpAgent& spAgent0, const UBEnv& ubEnv0, const VIdx& vIdx1, const SpAgent& spAgent1, const UBEnv& ubEnv1, const VReal& vDir/* unit direction vector from spAgent1 to spAgent0 */, const REAL dist, BOOL& link, JunctionEnd& end0/* dummy if link == false */, JunctionEnd& end1/* dummy if link == false */ ) {
 	/* MODEL START */
     link = false;
 
     S32 type0 = spAgent0.state.getType();
     S32 type1 = spAgent1.state.getType();
-    REAL factor = 1.1;
+    REAL factor = 2;
 
     REAL R0 = spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
     REAL R1 = spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS );
@@ -70,23 +73,25 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
 
     REAL R0 = A_AGENT_SHOVING_SCALE[type0]*spAgent0.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
     REAL R1 = A_AGENT_SHOVING_SCALE[type1]*spAgent1.state.getModelReal( CELL_MODEL_REAL_RADIUS ) ;
-    REAL dist_threshold = R0 + R1;
+    REAL dist_threshold = (R0 + R1) * 2;
     REAL D = R0 + R1 - 0.5*A_AGENT_SHOVING_LIMIT[type0] - 0.5*A_AGENT_SHOVING_LIMIT[type1];
     REAL mag = 0.0;
-    REAL stress = 0.0 ; 
-    REAL xij  = D - dist ;
+    REAL stress = 0.0 ;
+    REAL xij = D - dist;
+    REAL Fij = 0.0 ;
+    REAL sij = A_AGENT_BOND_S[type0][type1] ;
 
     
+
+
     if ( A_AGENT_BOND_S[type0][type1] > 0.0 ){
-        REAL sij = A_AGENT_BOND_S[type0][type1] ;
         if(spAgent0.junctionData.isLinked(spAgent1.junctionData) == true) {
             if( dist > A_AGENT_BOND_DESTROY_FACTOR[type0][type1]* dist_threshold ) {
                 unlink = true;/* break junction */
                 //cout << " broken juntion " << endl;
             }
             else{
-                // compute elastic force
-                REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
+                Fij += addAdhesionForce(Fij, xij, sij);
                 mag = mag + Fij ;
                 stress = stress + dist * Fij ;
 
@@ -100,29 +105,29 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
                     mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Y,-vDir[1] );
                     mechIntrctData1.setModelReal( CELL_DIVISION_NORMAL_Z,-vDir[2] );
                 } 
- 
-
             }
         }
         else {/* no junction */
             if( dist < A_AGENT_BOND_CREATE_FACTOR[type0][type1]*dist_threshold ) {
 
-               link = true;/* form junction */
+                link = true;/* form junction */
 
-               if ( type0 == type1 ) {
+                if ( type0 == type1 ) {
                   end0.setType( JUNCTION_END_TYPE_CELL );
                   end1.setType( JUNCTION_END_TYPE_CELL );
-               } else {
+                } else {
                   end0.setType( JUNCTION_END_TYPE_MICROCARRIER );
                   end1.setType( JUNCTION_END_TYPE_MICROCARRIER );
-               }
+                }
 
-               // add force rigth away
-               REAL D = R0 + R1;
-               REAL xij  = D - dist  ;
-               REAL Fij = 0.5 * xij * tanh(FABS(xij)*sij);
-               mag = mag + Fij ;
-               stress = stress + dist * Fij;
+                // add force rigth away
+                REAL D = R0 + R1;
+                REAL xij  = D - dist  ;
+                REAL Fij = 0.0;
+                Fij += addAdhesionForce(Fij, xij, sij);
+                
+                mag = mag + Fij ;
+                stress = stress + dist * Fij;
             }
         }
         
@@ -150,5 +155,50 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     return;
 
 }
-#endif
 
+static REAL addAdhesionForce( REAL& Fij, const REAL& xij, const REAL& sij){
+    // compute elastic force
+    switch (ADHESION_TYPE) {
+
+        //original tanh based adhesion force (more info ask Boris Aguilar)
+        case 1:
+            Fij += 0.5 * xij * tanh(FABS(xij)*sij);
+            break;
+
+        // piecewise linear based on dx.doi.org/10.1021/la500045q
+        // bond strenght sij should be 1 for cell-microcarrier bond in above literature
+        case 2: 
+            if ( xij < 1.5 ) { //distance in micron
+                Fij += sij * xij * 30; //force in nN
+            }
+            else if ( xij < 5) {
+                Fij += sij * 45 - 0.3 * (xij - 1.5);
+            }
+            else if ( xij < 13) {
+                Fij += sij * 43 - 5 * (xij - 5);
+            }
+            else if ( xij < 16.5) {
+                Fij += sij * 3.5 - 0.9 * (xij - 13);
+            }
+            break;
+
+        // adhesion force with Lennard-Jones potential
+        case 3:{
+            REAL sig; 
+            REAL eps = 45 ;
+            REAL LJBase = sig / FABS(xij);
+
+            Fij += 4 * eps * ( pow( LJBase , 6) - pow( LJBase , 12) ) * sij;
+            break;
+        }
+        // adhesion force by integrin simulation
+        case 4:
+            //TODO
+            break;
+
+    }
+
+    return Fij;
+}
+
+#endif

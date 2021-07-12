@@ -233,7 +233,7 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 	/* MODEL START */
 
 	fileOutputInfo.v_spAgentParticleOutput.assign( NUM_AGENT_TYPES , true );
-	CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
+	// CHECK( NUM_PARTICLE_EXTRA_OUTPUT_REALS == 1 );
 	fileOutputInfo.v_particleExtraOutputRealName.resize( NUM_PARTICLE_EXTRA_OUTPUT_REALS );
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_RADIUS] = "radius";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_STRESS] = "stress";
@@ -242,7 +242,10 @@ void ModelRoutine::updateFileOutputInfo( FileOutputInfo& fileOutputInfo ) {
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VX] = "vx";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VY] = "vy";
 	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_VZ] = "vz";
-  
+  	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FX] = "fx";
+	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FY] = "fy";
+	fileOutputInfo.v_particleExtraOutputRealName[PARTICLE_EXTRA_OUTPUT_REAL_FZ] = "fz";
+
 	fileOutputInfo.v_particleExtraOutputVRealName.clear();
 	fileOutputInfo.v_phiOutput.clear();
 	fileOutputInfo.v_phiOutputDivideByKappa.clear();
