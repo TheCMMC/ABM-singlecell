@@ -1,16 +1,19 @@
-# ABM microcarriers
+# ABM singlecell
 
-This software is used for the Proof of Concept project by the [CMMC](thecmmc.org). The technical report describing the proof of concept can be found [here](https://zenodo.org/record/4264611). 
+This software is under copyright of the CMMC and no license is offered at the moment. It is used in the Multiscale Modeling of Bioreactors by the [CMMC](thecmmc.org). 
 
 ## About
 
-This repository contains the ABM-microcarriers model that is being developed for the GFI bioreactor project from the [Cultivated Meat Modeling Consortium](http://www.thecmmc.org).
+This repository contains the ABM-singlecell model that is being developed for the GFI bioreactor project from the [Cultivated Meat Modeling Consortium](http://www.thecmmc.org).
 To run this model a working installation of Biocellion v3.1 is needed.
 
 ## Setup
 
 - Download Biocellion 3.1 (Biocellion 3.1 is currently not available yet)
 - Install CGAL: https://doc.cgal.org/latest/Manual/usage.html
+- Download this repository into the $BIOCELLION_USER directory as in the Biocellion 3.1 instructions
+- Read chapter 6 of the Biocellion 3.1 instructions to build and excecute the model
+- Create a directory called "output" before running the model
 
 ## Contributing
 
