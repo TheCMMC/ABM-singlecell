@@ -155,7 +155,6 @@ void ModelRoutine::computeMechIntrctSpAgent( const S32 iter, const VIdx& vIdx0, 
     return;
 
 }
-#endif
 
 static REAL addAdhesionForce( REAL& Fij, const REAL& xij, const REAL& sij){
     // compute elastic force
@@ -201,3 +200,5 @@ static REAL addAdhesionForce( REAL& Fij, const REAL& xij, const REAL& sij){
 
     return Fij;
 }
+
+#endif

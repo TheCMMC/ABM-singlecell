@@ -1,6 +1,6 @@
 # ABM singlecell
 
-This software is used in the Multiscale Modeling of Bioreactors by the [CMMC](thecmmc.org). 
+This software is under copyright of the CMMC and no license is offered at the moment. It is used in the Multiscale Modeling of Bioreactors by the [CMMC](thecmmc.org). 
 
 ## About
 
